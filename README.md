@@ -48,6 +48,10 @@ Mean absolute error per nutrient, with 95% bootstrap confidence intervals over 1
 
 EfficientNetB3 wins on every target, with the largest margins on carbohydrate and protein. All three models beat the SnapNutrition baseline. The two best models both use ImageNet pretraining, which suggests transfer learning suits a training set this size; EfficientNetB3's higher input resolution and orientation augmentation appear to resolve the finer visual cues separating carbs from protein.
 
+![Training and validation loss and MAE per epoch for the fine-tuned EfficientNetB3 model](paper/figures/training_curves.png)
+
+*Figure 1. Training and validation loss and mean absolute error per epoch for the fine-tuned EfficientNetB3 model. Mean absolute error is shown in standardized target units.*
+
 ## Android app
 
 A Kotlin / Jetpack Compose Android application that runs the model on a phone: capture a photo, get an estimate, log it. Built for the poster presentation and installable on a physical device via USB debugging.
