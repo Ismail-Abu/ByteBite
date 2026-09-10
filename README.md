@@ -71,7 +71,6 @@ paper/                         write-up and figures
 ```
 
 Set `NUTRITION5K_DIR` to your local Nutrition5k path before running the notebooks.
-
 ## References
 
 1. Thames et al., "Nutrition5k: Towards Automatic Nutritional Understanding of Generic Food," arXiv:2103.03375, 2021.
