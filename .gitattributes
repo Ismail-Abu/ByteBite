@@ -1,0 +1,12 @@
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.h5 binary
+*.keras binary
+*.pb binary
+*.tflite binary
+*.onnx binary
+*.jar binary
+*.apk binary
+*.aab binary
