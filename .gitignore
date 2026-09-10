@@ -1,0 +1,40 @@
+# Dataset (never commit - ~180GB)
+nutrition5k_dataset/
+data/
+*.csv.gz
+
+# Model weights and checkpoints
+*.h5
+*.keras
+*.pb
+*.tflite
+*.onnx
+checkpoints/
+saved_models/
+runs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+.idea/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Secrets
+.env
+*.key
