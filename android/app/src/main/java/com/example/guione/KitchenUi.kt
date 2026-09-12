@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -86,6 +88,15 @@ fun KitchenExperience() {
     var selectedDate by remember { mutableStateOf(SampleData.today) }
     var showCal by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    // Load the interpreter while the user is still framing the shot, so the
+    // shutter tap is not charged for it.
+    LaunchedEffect(Unit) { ScanStore.warmUp(context) }
+    val capture = rememberDishCapture { bitmap ->
+        ScanStore.scan(context, bitmap)
+        tab = 1                       // jump to the plate; it renders the running state
+    }
+
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = KGreen,
@@ -97,7 +108,10 @@ fun KitchenExperience() {
     ) {
         Box(Modifier.fillMaxSize().background(KBg)) {
             when (tab) {
-                0 -> SnapScreen(onSnap = { tab = 1 })
+                0 -> SnapScreen(
+                    onSnap = { capture.fromCamera() },
+                    onPick = { capture.fromGallery() }
+                )
                 1 -> PlateScreen()
                 else -> WeekScreen(
                     selected = selectedDate,
@@ -118,7 +132,7 @@ fun KitchenExperience() {
 // ---------------- PAGE 1 : SNAP ----------------
 
 @Composable
-private fun SnapScreen(onSnap: () -> Unit) {
+private fun SnapScreen(onSnap: () -> Unit, onPick: () -> Unit) {
     val dayName = SampleData.today.dayOfWeek
         .getDisplayName(JTextStyle.FULL, Locale.ENGLISH).uppercase(Locale.ENGLISH)
 
@@ -240,8 +254,15 @@ private fun FoodPlate() {
 }
 
 @Composable
-private fun RoundIcon(glyph: String) {
-    Surface(shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(48.dp)) {
+private fun RoundIcon(glyph: String, onClick: (() -> Unit)? = null) {
+    Surface(
+        shape = CircleShape,
+        color = Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier
+            .size(48.dp)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+    ) {
         Box(contentAlignment = Alignment.Center) {
             Text(glyph, fontSize = 19.sp)
         }
@@ -280,10 +301,21 @@ fun ShutterButton(
 
 @Composable
 private fun PlateScreen() {
+    val dish = DishView.current()
+    val running = ScanStore.state is ScanStore.State.Running
+    val failed = ScanStore.state as? ScanStore.State.Failed
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(top = 10.dp)
     ) {
-        KitchenHead(eyebrow = "JUST SNAPPED \u00B7 12:42 PM", title = SampleData.DISH_NAME)
+        KitchenHead(
+            eyebrow = when {
+                running -> "READING THE PLATE\u2026"
+                dish.live -> "JUST SNAPPED \u00B7 ${dish.detail.uppercase(Locale.ENGLISH)}"
+                else -> "SAMPLE DISH \u00B7 NO MODEL INSTALLED"
+            },
+            title = dish.name
+        )
 
         Row(
             Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -291,7 +323,7 @@ private fun PlateScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("\uD83C\uDF74", fontSize = 26.sp, color = KSage, modifier = Modifier.padding(end = 12.dp))
-            CalorieDonut()
+            CalorieDonut(kcal = dish.kcal)
             Text("\uD83E\uDD44", fontSize = 26.sp, color = KSage, modifier = Modifier.padding(start = 12.dp))
         }
 
@@ -301,12 +333,12 @@ private fun PlateScreen() {
             verticalArrangement = Gap10
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Gap10) {
-                MacroChip("CARBS", "${SampleData.DISH_CARBS}g", KGold, Modifier.weight(1f))
-                MacroChip("PROTEIN", "${SampleData.DISH_PROTEIN}g", KGreen, Modifier.weight(1f))
+                MacroChip("CARBS", "${dish.carbG}g", KGold, Modifier.weight(1f))
+                MacroChip("PROTEIN", "${dish.proteinG}g", KGreen, Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Gap10) {
-                MacroChip("FAT", "${SampleData.DISH_FAT}g", KRust, Modifier.weight(1f))
-                MacroChip("MASS", "${SampleData.DISH_MASS}g", KSage, Modifier.weight(1f))
+                MacroChip("FAT", "${dish.fatG}g", KRust, Modifier.weight(1f))
+                MacroChip("MASS", "${dish.massG}g", KSage, Modifier.weight(1f))
             }
         }
 
@@ -318,9 +350,27 @@ private fun PlateScreen() {
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = KInk)) {
-                        append("Nicely balanced. ")
+                        append(
+                            when {
+                                failed != null -> "Couldn't read that photo. "
+                                dish.live -> "Estimated from one overhead photo. "
+                                else -> "Sample dish. "
+                            }
+                        )
                     }
-                    append("Protein covers 31% of today's goal \u2014 a fruit side would round out fiber.")
+                    // The mockup's coaching line ("protein covers 31% of today's
+                    // goal") was illustrative. The model returns five totals and
+                    // nothing else, so for a real estimate the honest thing to
+                    // show beside them is their measured error, not invented advice.
+                    append(
+                        when {
+                            failed != null -> failed.message
+                            dish.live -> dish.errorNote
+                                ?: "Estimate only \u2014 check it against a carb count you trust."
+                            else -> "Run notebooks/bytebite_android_export.ipynb to install the " +
+                                "model, then these numbers come from the photo."
+                        }
+                    )
                 },
                 modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp),
                 color = KNoteText,
@@ -335,7 +385,7 @@ private fun PlateScreen() {
 }
 
 @Composable
-private fun CalorieDonut() {
+private fun CalorieDonut(kcal: Int) {
     Surface(shape = CircleShape, color = Color.White, shadowElevation = 12.dp, modifier = Modifier.size(252.dp)) {
         Box(contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
@@ -362,7 +412,7 @@ private fun CalorieDonut() {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    SampleData.DISH_KCAL.toString(),
+                    kcal.toString(),
                     color = KInk,
                     fontSize = 54.sp,
                     fontWeight = FontWeight.Bold,

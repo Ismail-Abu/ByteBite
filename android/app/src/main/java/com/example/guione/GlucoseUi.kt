@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -93,6 +95,13 @@ fun GlucoseExperience() {
     var selectedDate by remember { mutableStateOf(SampleData.today) }
     var showCal by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { ScanStore.warmUp(context) }
+    val capture = rememberDishCapture { bitmap ->
+        ScanStore.scan(context, bitmap)
+        scanned = true                 // the result screen renders the running state
+    }
+
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = GBlue,
@@ -106,7 +115,10 @@ fun GlucoseExperience() {
             when (tab) {
                 0 -> GTodayScreen(onScan = { scanned = false; tab = 1 })
                 1 -> if (!scanned) {
-                    GCameraScreen(onShutter = { scanned = true })
+                    GCameraScreen(
+                        onShutter = { capture.fromCamera() },
+                        onPick = { capture.fromGallery() }
+                    )
                 } else {
                     GScanResultScreen(onLog = { tab = 2; scanned = false })
                 }
@@ -132,7 +144,7 @@ fun GlucoseExperience() {
 // ---------------- SCREEN 0 (start) : MOCK CAMERA ----------------
 
 @Composable
-private fun GCameraScreen(onShutter: () -> Unit) {
+private fun GCameraScreen(onShutter: () -> Unit, onPick: () -> Unit) {
     Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = 10.dp)) {
         GlucoseHead(hi = "SCAN A MEAL", title = "Point straight down")
 
@@ -186,10 +198,18 @@ private fun GCameraScreen(onShutter: () -> Unit) {
         ) {
             ShutterButton(ringColor = GTeal, gapColor = Color(0xFFE4EEF2), onClick = onShutter)
             Text(
-                "Tap to scan \u2014 demo uses a sample dish",
+                if (ScanStore.modelAvailable) "Tap to scan \u2014 runs on this phone, offline"
+                else "Tap to scan \u2014 no model installed, showing a sample dish",
                 modifier = Modifier.padding(top = 10.dp),
                 color = GMute,
                 fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "or choose an existing photo",
+                modifier = Modifier.padding(top = 8.dp).clickable(onClick = onPick),
+                color = GBlue,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -404,10 +424,22 @@ private fun GlucoseCurve(modifier: Modifier = Modifier) {
 
 @Composable
 private fun GScanResultScreen(onLog: () -> Unit) {
+    val dish = DishView.current()
+    val running = ScanStore.state is ScanStore.State.Running
+    val failed = ScanStore.state as? ScanStore.State.Failed
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(top = 10.dp)
     ) {
-        GlucoseHead(hi = "Scanned just now \u00B7 12:42", title = "Carb count first")
+        GlucoseHead(
+            hi = when {
+                running -> "Running on device\u2026"
+                failed != null -> "Scan failed"
+                dish.live -> "Scanned just now \u00B7 ${dish.detail}"
+                else -> "Sample dish \u00B7 no model installed"
+            },
+            title = "Carb count first"
+        )
 
         // Carb hero
         Surface(
@@ -421,11 +453,11 @@ private fun GScanResultScreen(onLog: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "CHICKEN & RICE BOWL \u00B7 EST. ${SampleData.DISH_MASS} G",
+                    "${dish.name.uppercase(Locale.ENGLISH)} \u00B7 EST. ${dish.massG} G",
                     color = GSlate, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp
                 )
                 Text(
-                    SampleData.DISH_CARBS.toString(),
+                    dish.carbG.toString(),
                     modifier = Modifier.padding(top = 6.dp),
                     color = GAmber, fontSize = 74.sp, fontWeight = FontWeight.Bold, lineHeight = 76.sp
                 )
@@ -434,14 +466,31 @@ private fun GScanResultScreen(onLog: () -> Unit) {
                     modifier = Modifier.padding(top = 2.dp),
                     color = GMute, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp
                 )
-                Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    SplitBit("\u2248 ", "38 g", " from rice")
-                    SplitBit("\u2248 ", "8 g", " veggies & sauce")
+                // The mockup broke the total into "38 g from rice / 8 g veggies
+                // & sauce". v4 has a single Dense(5) head over the whole dish and
+                // no per-ingredient output, so that split cannot be produced from
+                // a real scan. Shown only in the sample-data state, where it is
+                // clearly illustrative; a live estimate gets its error bar instead.
+                if (dish.live) {
+                    Text(
+                        dish.errorNote ?: "One photo, one estimate",
+                        modifier = Modifier.padding(top = 14.dp),
+                        color = GSlate, fontSize = 13.sp, fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        SplitBit("\u2248 ", "38 g", " from rice")
+                        SplitBit("\u2248 ", "8 g", " veggies & sauce")
+                    }
                 }
             }
         }
 
-        // Hidden-sugar warning
+        // Advisory card. The mockup attributed this to "the model's cooking-cue
+        // read", but v4 dropped the text and cooking-classification heads
+        // permanently, so there is no cooking cue to report. A live estimate gets
+        // a caveat the model's actual inputs support instead: one overhead RGB
+        // frame, no depth, so anything below the top layer is inferred.
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -452,11 +501,18 @@ private fun GScanResultScreen(onLog: () -> Unit) {
         ) {
             Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
                 Text(
-                    "\u26A0 Heads up: sauce may hide sugar",
+                    if (dish.live) "\u26A0 Estimate, not a measurement"
+                    else "\u26A0 Heads up: sauce may hide sugar",
                     color = Color(0xFF8A5B14), fontSize = 14.sp, fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "The model's cooking-cue read suggests a glazed sauce. Glazes can add fast-acting carbs \u2014 if you're unsure, log it and watch your 2-hour trend.",
+                    if (dish.live)
+                        "Read from a single overhead photo of the plate, with no depth " +
+                        "information. Sauces, oils and anything hidden under the top " +
+                        "layer are inferred, not seen. Treat it as a starting point for " +
+                        "a carb count, not a replacement for one."
+                    else
+                        "The model's cooking-cue read suggests a glazed sauce. Glazes can add fast-acting carbs \u2014 if you're unsure, log it and watch your 2-hour trend.",
                     modifier = Modifier.padding(top = 6.dp),
                     color = Color(0xFF6E5A34), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp
                 )
@@ -468,9 +524,9 @@ private fun GScanResultScreen(onLog: () -> Unit) {
             Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp),
             horizontalArrangement = Gap12
         ) {
-            MiniStat("CALORIES", SampleData.DISH_KCAL.toString(), Modifier.weight(1f))
-            MiniStat("PROTEIN", "${SampleData.DISH_PROTEIN} g", Modifier.weight(1f))
-            MiniStat("FAT", "${SampleData.DISH_FAT} g", Modifier.weight(1f))
+            MiniStat("CALORIES", dish.kcal.toString(), Modifier.weight(1f))
+            MiniStat("PROTEIN", "${dish.proteinG} g", Modifier.weight(1f))
+            MiniStat("FAT", "${dish.fatG} g", Modifier.weight(1f))
         }
 
         // Buttons

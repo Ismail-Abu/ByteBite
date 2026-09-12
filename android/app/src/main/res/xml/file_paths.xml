@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the captures/ subdirectory of the app cache is shared, and only with the
+  camera app that is handed the Uri. Nothing in here outlives the scan.
+-->
+<paths>
+    <cache-path name="captures" path="captures/" />
+</paths>

@@ -39,6 +39,13 @@ android {
         compose = true
         viewBinding = true
     }
+
+    androidResources {
+        // The .tflite must stay uncompressed in the APK: NutritionEstimator
+        // memory-maps it straight out of the package, which a deflated asset
+        // cannot support. Without this the interpreter fails to load at runtime.
+        noCompress += "tflite"
+    }
 }
 
 kotlin {
@@ -62,9 +69,17 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
+
+    // On-device inference
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.gpu.api)
+    implementation(libs.androidx.exifinterface)
+
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

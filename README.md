@@ -54,7 +54,17 @@ EfficientNetB3 wins on every target, with the largest margins on carbohydrate an
 
 ## Android app
 
-A Kotlin / Jetpack Compose Android application that runs the model on a phone: capture a photo, get an estimate, log it. Built for the poster presentation and installable on a physical device via USB debugging.
+A Kotlin / Jetpack Compose application that runs the model **on the phone**: capture an overhead photo, get the five estimates, log it. No server and no `INTERNET` permission, so neither the photo nor the estimate can leave the device.
+
+The trained Keras model is converted to LiteRT (TensorFlow Lite) by [`notebooks/bytebite_android_export.ipynb`](notebooks/bytebite_android_export.ipynb), which also writes the preprocessing contract and a parity fixture into the app's `assets/`. `float16` ships by default at 22.3 MB; `int8` would be 13.0 MB and is only adopted if post-quantization carbohydrate MAE degrades by less than 0.10 g, which is checked on the full test set rather than assumed.
+
+| | size | on CPU | shipped |
+|---|---|---|---|
+| float32 | 44.4 MB | reference | no |
+| **float16** | **22.3 MB** | GPU-delegate eligible | **yes** |
+| int8 | 13.0 MB | fastest | only if it clears the accuracy gate |
+
+`android/README_MODEL.md` covers the routes considered (LiteRT variants, ONNX Runtime Mobile, ExecuTorch, a lighter backbone), the delegate choices, and the three preprocessing details that silently break this kind of port. The `.tflite` is not committed; with `assets/` empty the app builds and runs as the UI prototype on sample data, clearly labelled as such.
 
 ## Future work
 
@@ -70,7 +80,13 @@ notebooks/
                                took overall MAE 21.59 -> 18.14 (17.33 with a 5-model
                                ensemble), plus the negative result on text-alignment heads
   bytebite_nutrition5k_model_comparison.ipynb   model comparison and evaluation
+  bytebite_android_export.ipynb                 Keras -> LiteRT conversion: three
+                               quantization variants, test-set accuracy cost of each,
+                               a pre-registered gate on which one ships, and the
+                               assets the phone needs to reproduce the notebook
 android/                       Kotlin / Jetpack Compose app
+  README_MODEL.md              conversion routes considered, delegates, and the
+                               preprocessing contract the app must honour
 paper/                         write-up and figures
 ```
 
