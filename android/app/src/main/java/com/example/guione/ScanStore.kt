@@ -184,7 +184,13 @@ data class DishView(
     val scanId: Long,
 ) {
     companion object {
-        private fun Float.g1(): Double = (this * 10f).toDouble().let { Math.round(it) / 10.0 }
+        /**
+         * One decimal place, floored at zero. The regression head is unconstrained
+         * and dips slightly below zero on lean plates (fat on plain vegetables);
+         * a negative gram count is never a real reading, so it shows as 0.
+         */
+        private fun Float.g1(): Double =
+            (coerceAtLeast(0f) * 10f).toDouble().let { Math.round(it) / 10.0 }
 
         fun current(): DishView {
             val e = ScanStore.lastEstimate

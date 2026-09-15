@@ -193,7 +193,9 @@ private fun SnapScreen(onSnap: () -> Unit, onPick: () -> Unit) {
                             withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold, color = KGreen)) {
                                 append("flat overhead")
                             }
-                            append(" \u2014 looks great!")
+                            // Nutrition5k is overhead-only, so an angled shot is out of
+                            // distribution however good the photo is.
+                            append(" \u2014 that's how the model was trained")
                         },
                         modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                         color = KHint,
@@ -210,7 +212,7 @@ private fun SnapScreen(onSnap: () -> Unit, onPick: () -> Unit) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RoundIcon("\uD83D\uDDBC")
+            RoundIcon("\uD83D\uDDBC", onClick = onPick)
             ShutterButton(
                 ringColor = KGreen,
                 gapColor = KBg,
