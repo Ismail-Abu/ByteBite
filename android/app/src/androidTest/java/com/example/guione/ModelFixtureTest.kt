@@ -57,15 +57,15 @@ class ModelFixtureTest {
         val expected = fixture.getJSONArray("expected_real")
         val tolerance = fixture.getJSONArray("tolerance_real")
 
-        // The fixture image is already 300x300, so prepare() should be a no-op on
-        // it: aspect matches within epsilon and the scale is identity. That makes
-        // this a test of the tensor path, not of the resize.
+        // The fixture image is already the model-sized frame, so it enters through
+        // estimatePrepared(). Sending it through prepare() would crop the square
+        // image to the source aspect ratio - the mismatch this test first caught.
         val bitmap = context.assets.open(fixture.getString("image_asset")).use {
             BitmapFactory.decodeStream(it)
         }.copy(Bitmap.Config.ARGB_8888, false)
 
         NutritionEstimator.load(context).use { estimator ->
-            val e = estimator.estimate(bitmap)
+            val e = estimator.estimatePrepared(bitmap)
             val targets = estimator.spec.targets
 
             for (i in targets.indices) {
@@ -87,9 +87,9 @@ class ModelFixtureTest {
         assumeTrue("no exported model in assets/", assetsPresent())
 
         NutritionEstimator.load(context).use { estimator ->
+            // load() already refuses a graph whose tensors disagree with the
+            // sidecar, so reaching this line means shapes match; check the stats.
             val spec = estimator.spec
-            assertEquals(300, spec.width)
-            assertEquals(300, spec.height)
             assertEquals(5, spec.outputs)
             // mu/sd have to be finite and non-degenerate or the inverse z-score
             // silently collapses every dish onto the training mean.
@@ -117,8 +117,8 @@ class ModelFixtureTest {
         }.copy(Bitmap.Config.ARGB_8888, false)
 
         NutritionEstimator.load(context).use { estimator ->
-            val first = estimator.estimate(frame())
-            val second = estimator.estimate(frame())
+            val first = estimator.estimatePrepared(frame())
+            val second = estimator.estimatePrepared(frame())
             assertEquals(first.calories, second.calories, 1e-3f)
             assertEquals(first.carbG, second.carbG, 1e-3f)
         }

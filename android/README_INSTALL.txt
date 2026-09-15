@@ -2,11 +2,12 @@ ByteBite Android app - install into your existing "Guione" Android Studio projec
 =================================================================================
 
 WHAT THIS IS
-Native Compose recreation of the two HTML mockups, now running the real model
-on the device:
+Native Compose app, now running the real model on the device:
+- Fusion (Scan / Glucose / Log / Manual entry + profile) - the combined experience
 - Kitchen Journal (Snap / Plate / Week + calendar)
 - Glucose (Camera start / Today / Scan result / Log + calendar)
-One app, chooser screen first.
+One app, chooser screen first. A scan in any of them is logged into that
+experience's history for the session, and the Today carb totals follow it.
 
 The shutter takes a real photo and the five nutrition numbers come from the
 v4 EfficientNetB3 model running locally through LiteRT. With no model installed
@@ -23,17 +24,18 @@ INSTALL
 
    Overwrites:
      gradle/wrapper/gradle-wrapper.properties
-     gradle/libs.versions.toml                  (+ tflite, exifinterface)
+     gradle/libs.versions.toml                  (+ litert, exifinterface)
      build.gradle.kts
      app/build.gradle.kts                       (+ deps, noCompress "tflite")
      app/src/main/AndroidManifest.xml           (+ FileProvider)
      app/src/main/java/com/example/guione/MainActivity.kt
+     app/src/main/java/com/example/guione/FusionUi.kt
+     app/src/main/java/com/example/guione/SampleData.kt
      app/src/main/java/com/example/guione/KitchenUi.kt
      app/src/main/java/com/example/guione/GlucoseUi.kt
 
    Adds:
      app/src/main/java/com/example/guione/CalendarUi.kt
-     app/src/main/java/com/example/guione/SampleData.kt
      app/src/main/java/com/example/guione/NutritionEstimator.kt   on-device inference
      app/src/main/java/com/example/guione/ScanStore.kt            scan state
      app/src/main/java/com/example/guione/DishCapture.kt          camera + gallery
@@ -45,14 +47,12 @@ INSTALL
    First sync downloads Gradle 8.14.2, Compose, and the LiteRT runtime - needs
    internet, takes a few minutes.
 4. Run the "app" configuration on a device or the Medium Phone emulator.
-5. Chooser screen appears: pick Kitchen or Glucose. System Back returns to the
+5. Chooser screen appears: pick Fusion, Kitchen or Glucose. System Back returns to the
    chooser.
 
 NOTES
-- If your project already has newer SampleData.kt / MainActivity.kt than this
-  bundle (for example a third "Fusion" experience), keep yours and take only the
-  three new Kotlin files plus the KitchenUi/GlucoseUi, gradle, and manifest
-  changes. This bundle's copies are the two-experience version.
+- Logs live in memory for the session: closing the app resets them to the
+  sample history, which is deliberate for back-to-back demos.
 - No CAMERA permission is needed: capture goes through the system camera app.
   The FileProvider entry in the manifest is required for that, though.
 - Do NOT delete the old template files (FirstFragment, SecondFragment, layouts,

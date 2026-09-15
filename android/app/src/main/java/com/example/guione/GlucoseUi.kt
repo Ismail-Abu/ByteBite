@@ -120,7 +120,22 @@ fun GlucoseExperience() {
                         onPick = { capture.fromGallery() }
                     )
                 } else {
-                    GScanResultScreen(onLog = { tab = 2; scanned = false })
+                    GScanResultScreen(onLog = {
+                        val dish = DishView.current()
+                        if (!ScanStore.busy && dish.live && ScanStore.claimForLog(dish, "glucose")) {
+                            // Neutral spike label: nothing here measures glucose.
+                            SampleData.glucoseMeals.add(
+                                0,
+                                GlucoseMeal(
+                                    dish.name, dish.carbG, ScanStore.nowLabel(), "logged from scan",
+                                    "\uD83C\uDF7D\uFE0F", GBand, "logged", false, SampleData.today
+                                )
+                            )
+                        }
+                        selectedDate = SampleData.today
+                        tab = 2
+                        scanned = false
+                    })
                 }
                 else -> GLogScreen(
                     selected = selectedDate,
@@ -304,7 +319,7 @@ private fun GTodayScreen(onScan: () -> Unit) {
                     Text("CARBS TODAY", color = GSlate, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.9.sp)
                     Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
                         Text(
-                            SampleData.CARBS_SO_FAR.toString(),
+                            SampleData.carbsToday(SampleData.glucoseMeals).toString(),
                             color = GAmber,
                             fontSize = 34.sp,
                             fontWeight = FontWeight.Bold
@@ -327,7 +342,7 @@ private fun GTodayScreen(onScan: () -> Unit) {
                     ) {
                         Box(
                             Modifier
-                                .fillMaxWidth(SampleData.CARBS_SO_FAR / SampleData.CARB_BUDGET.toFloat())
+                                .fillMaxWidth((SampleData.carbsToday(SampleData.glucoseMeals) / SampleData.CARB_BUDGET.toFloat()).coerceIn(0f, 1f))
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(50))
                                 .background(Brush.horizontalGradient(listOf(GAmberLt, GAmber)))

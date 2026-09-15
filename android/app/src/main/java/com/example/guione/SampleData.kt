@@ -1,8 +1,13 @@
 package com.example.guione
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import java.time.DayOfWeek
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
 /**
  * Every number, meal, and label in the app lives here.
@@ -56,7 +61,7 @@ object SampleData {
     const val DISH_FAT = 18.2
     const val DISH_MASS = 387
 
-    val kitchenMeals = listOf(
+    val kitchenMeals = mutableStateListOf(
         KitchenMeal("Chicken & rice bowl", 542, "lunch", Color(0xFFB7CE8F), d0),
         KitchenMeal("Beef chili & cornbread", 731, "dinner", Color(0xFF9C5B4B), d1),
         KitchenMeal("Veggie omelet & toast", 438, "breakfast", Color(0xFFE9C46A), d1),
@@ -71,7 +76,7 @@ object SampleData {
         TryNextItem("Oats with banana", "steadier morning carbs", "fiber", true, Color(0xFFEFD9A8))
     )
 
-    val glucoseMeals = listOf(
+    val glucoseMeals = mutableStateListOf(
         GlucoseMeal("Chicken & rice bowl", 45.6, "12:42", "logged from scan", "\uD83C\uDF7D\uFE0F", Color(0xFFE4F3EA), "gentle rise", false, d0),
         GlucoseMeal("Bagel & cream cheese", 52.0, "7:55", "logged from scan", "\uD83E\uDD6F", Color(0xFFFDF0DE), "spiked +64", true, d0),
         GlucoseMeal("Latte, 2% milk", 13.0, "7:20", "quick add", "\u2615", Color(0xFFE7F2F7), "gentle rise", false, d0)
@@ -86,6 +91,39 @@ object SampleData {
     // Today card values (glucose)
     const val GLUCOSE_NOW = 128
     const val TIME_IN_RANGE = "78% in range"
-    const val CARBS_SO_FAR = 112
     const val CARB_BUDGET = 180
+
+    /**
+     * Carbs logged today in [meals]. Computed rather than hardcoded so logging a
+     * scan visibly moves the Today card during a demo.
+     */
+    fun carbsToday(meals: List<GlucoseMeal>): Int =
+        meals.filter { it.date == today }.sumOf { it.carbs }.roundToInt()
+
+    /** Meal slot for a log entry made now. */
+    fun slotNow(): String = when (java.time.LocalTime.now().hour) {
+        in 4..10 -> "breakfast"
+        in 11..15 -> "lunch"
+        else -> "dinner"
+    }
+
+    // Glucose day stats (Combined experience)
+    const val GLUCOSE_AVG = 121
+    const val GLUCOSE_PEAK = 168
+    const val GLUCOSE_LOW = 84
+
+    // Profile (Combined experience) - kept in memory for the session
+    var profileWeight: String by mutableStateOf("")
+    var profileHeight: String by mutableStateOf("")
+    var profileActivity: String by mutableStateOf("")
+
+    // Combined experience: live in-session log.
+    // Seeded WITHOUT today's chicken & rice bowl so "Log meal" after a scan
+    // (or the Add page) visibly adds entries during a demo.
+    val fusionMeals = mutableStateListOf(
+        GlucoseMeal("Bagel & cream cheese", 52.0, "7:55", "logged from scan", "\uD83E\uDD6F", Color(0xFFFDF0DE), "spiked +64", true, d0),
+        GlucoseMeal("Latte, 2% milk", 13.0, "7:20", "quick add", "\u2615", Color(0xFFE7F2F7), "gentle rise", false, d0),
+        GlucoseMeal("Beef chili & cornbread", 58.4, "18:30", "logged from scan", "\uD83C\uDF72", Color(0xFFF6E3DC), "spiked +52", true, d1),
+        GlucoseMeal("Veggie omelet & toast", 21.0, "8:05", "logged from scan", "\uD83C\uDF73", Color(0xFFFBF0DA), "gentle rise", false, d1)
+    )
 }

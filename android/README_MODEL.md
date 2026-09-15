@@ -44,8 +44,8 @@ CPU, and the reverse once the GPU delegate engages.
 
 ### APK size
 
-The two LiteRT native libraries ship for all four ABIs, which is ~23 MB of the
-debug APK before the model is added — so a `float16` build lands near 60 MB. For a
+The two LiteRT native libraries ship for all four ABIs, and with the `float16`
+model in assets the debug APK measured 66 MB. For a
 sideloaded poster demo that is fine. For anything distributed, restrict the ABIs:
 
 ```kotlin
@@ -53,8 +53,8 @@ sideloaded poster demo that is fine. For anything distributed, restrict the ABIs
 ndk { abiFilters += listOf("arm64-v8a") }
 ```
 
-Every current Android phone is arm64, and dropping the other three takes roughly
-16 MB off. Keep `x86_64` too if the emulator matters for development.
+Every current Android phone is arm64. The other three ABIs measured 22.7 MB of
+native libraries in the debug APK, so dropping them takes the build to about 44 MB. Keep `x86_64` too if the emulator matters for development.
 
 ---
 
@@ -66,6 +66,7 @@ machine holding the trained weights:
 ```
 NUTRITION5K_DIR=/path/to/nutrition5k_dataset \
 BYTEBITE_V4_MODEL=outputs/v4_s42.keras \
+BYTEBITE_SPLIT_CSV=outputs/data_split_seed42.csv \
 BYTEBITE_ANDROID_ASSETS=android/app/src/main/assets \
 jupyter nbconvert --to notebook --execute notebooks/bytebite_android_export.ipynb
 ```
@@ -89,19 +90,24 @@ All three are pinned in `bytebite_model.json` and enforced by the fixture test.
    `efficientnet.preprocess_input` is a no-op. A `/255f` in the Kotlin
    double-normalizes the input and returns confident nonsense rather than an
    obvious error.
-2. **Outputs are z-scores.** The head emits five standardized values;
-   `real = z * sd + mu` using **train-only** statistics, index-aligned with
+2. **Know whether the head is standardized.** The v4 head emits five z-scores, so
+   `real = z * sd + mu` with **train-only** statistics, index-aligned with
    `targets` — which is `[calories, mass, fat, carb, protein]`, not alphabetical.
+   The earlier v1 model emits raw kcal and grams instead. The notebook measures
+   which reading matches the labels (they differ by orders of magnitude) and
+   writes `mu = 0, sd = 1` for a raw head, so the phone's arithmetic is one line.
 3. **Geometry must match training.** Training stretched the full overhead frame to
    300×300 with no crop. `NutritionEstimator.prepare` centre-crops to the
    dataset's aspect ratio and then stretches, so a 4:3 phone photo reproduces the
    training distortion. A square centre-crop would shrink the apparent portion and
-   bias mass and calories low.
+   bias mass and calories low. A portrait (3:4) photo is rotated to landscape first
+   rather than cropped, which would discard nearly half the plate; the v4 line
+   trained with random 90° rotations, so orientation carries no signal.
 
 ## Measuring on-device latency
 
 Every `Estimate` carries its own `latencyMs`, timed around `interpreter.run`, and
-the result screens print it (`on-device · float16 · 180 ms`). That is the number to
+the result screens print it (`on-device · float16 · <n> ms`). That is the number to
 quote — the notebook's host timings rank the variants but say nothing about a
 phone. Inference runs on `Dispatchers.Default`, serialised by a mutex, because a
 LiteRT `Interpreter` cannot be invoked concurrently.

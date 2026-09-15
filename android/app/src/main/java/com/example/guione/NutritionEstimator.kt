@@ -74,6 +74,11 @@ class NutritionEstimator private constructor(
         val latencyMs: Long,
         val variant: String,
         val accelerator: String,
+        /**
+         * Unique per scan. Two dishes can legitimately produce identical numbers,
+         * so logging de-duplicates on this rather than on the values.
+         */
+        val scanId: Long = System.nanoTime(),
     ) {
         /** Indexed in the model's own output order, for generic display. */
         fun value(i: Int): Float = when (i) {
@@ -97,14 +102,31 @@ class NutritionEstimator private constructor(
      */
     fun estimate(bitmap: Bitmap): Estimate {
         val scaled = prepare(bitmap)
+        try {
+            return estimatePrepared(scaled)
+        } finally {
+            if (scaled !== bitmap) scaled.recycle()
+        }
+    }
+
+    /**
+     * Runs a bitmap that is already the model-sized frame, skipping [prepare].
+     * The fixture test enters here: its image is the resized frame itself, and
+     * pushing it through [prepare] again would crop a square image to the source
+     * aspect ratio and change what the model sees.
+     */
+    internal fun estimatePrepared(scaled: Bitmap): Estimate {
+        require(scaled.width == spec.width && scaled.height == spec.height) {
+            "expected a ${spec.width}x${spec.height} frame, got ${scaled.width}x${scaled.height}"
+        }
         fillInput(scaled)
-        if (scaled !== bitmap) scaled.recycle()
 
         val t0 = System.nanoTime()
         interpreter.run(inputBuffer, output)
         val latencyMs = (System.nanoTime() - t0) / 1_000_000
 
-        // The head emits z-scores. real = z * sd + mu, index-aligned with targets.
+        // real = z * sd + mu, index-aligned with targets. A head trained on raw
+        // kcal and grams ships mu = 0 and sd = 1, so the same line is the identity.
         val z = output[0]
         val real = FloatArray(spec.outputs) { i -> z[i] * spec.sd[i] + spec.mu[i] }
         return Estimate(
@@ -127,10 +149,29 @@ class NutritionEstimator private constructor(
      * calories downward — the two targets read straight off portion size.
      */
     internal fun prepare(src: Bitmap): Bitmap {
-        val cropped = centreCropToAspect(src, spec.sourceAspect)
+        val turned = matchSourceOrientation(src, spec.sourceAspect)
+        val cropped = centreCropToAspect(turned, spec.sourceAspect)
         val scaled = Bitmap.createScaledBitmap(cropped, spec.width, spec.height, true)
-        if (cropped !== src && cropped !== scaled) cropped.recycle()
+        if (cropped !== turned && cropped !== scaled) cropped.recycle()
+        if (turned !== src && turned !== scaled) turned.recycle()
         return scaled
+    }
+
+    /**
+     * Rotates a portrait frame to landscape when the training frames were
+     * landscape, or the reverse. Someone holding a phone upright over a plate
+     * takes a 3:4 photo; the Nutrition5k rig produced 4:3. Cropping 3:4 down to
+     * 4:3 would discard almost half the plate, while a quarter turn discards
+     * nothing - and the v4 line trained with random 90-degree rotations, so an
+     * overhead dish has no orientation the model prefers.
+     */
+    private fun matchSourceOrientation(src: Bitmap, aspect: Float): Bitmap {
+        if (src.width == src.height) return src
+        val portrait = src.width < src.height
+        val sourcePortrait = aspect < 1f
+        if (portrait == sourcePortrait) return src
+        val quarterTurn = android.graphics.Matrix().apply { postRotate(90f) }
+        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, quarterTurn, true)
     }
 
     private fun centreCropToAspect(src: Bitmap, aspect: Float): Bitmap {
@@ -233,7 +274,9 @@ class NutritionEstimator private constructor(
             }
 
             val interpreter = try {
-                Interpreter(mapModel(context, spec.modelFile), options)
+                Interpreter(mapModel(context, spec.modelFile), options).also {
+                    checkGraphMatchesSpec(it, spec)
+                }
             } catch (e: Throwable) {
                 delegate?.close()
                 throw e
@@ -241,6 +284,27 @@ class NutritionEstimator private constructor(
 
             Log.i(TAG, "loaded ${spec.modelFile} (${spec.variant}) on $accelerator")
             return NutritionEstimator(interpreter, delegate, spec, accelerator)
+        }
+
+        /**
+         * The sidecar and the .tflite are written together by the export notebook,
+         * but they are separate files and can drift (a model swapped by hand, a
+         * stale JSON). A mismatch here would otherwise surface as a buffer-size
+         * crash on the first scan, or worse, as silently wrong numbers.
+         */
+        private fun checkGraphMatchesSpec(interpreter: Interpreter, spec: ModelSpec) {
+            val input = interpreter.getInputTensor(0).shape()     // [1, h, w, 3]
+            val output = interpreter.getOutputTensor(0).shape()   // [1, targets]
+            val ok = input.size == 4 && input[1] == spec.height && input[2] == spec.width &&
+                input[3] == 3 && output.last() == spec.outputs
+            if (!ok) {
+                interpreter.close()
+                error(
+                    "${spec.modelFile} is ${input.contentToString()} -> " +
+                        "${output.contentToString()} but $SIDECAR_ASSET describes " +
+                        "${spec.width}x${spec.height} -> ${spec.outputs}. Re-run the export notebook."
+                )
+            }
         }
 
         /**
@@ -269,9 +333,8 @@ class NutritionEstimator private constructor(
                 "unsupported input range '$range'; fillInput writes 0-255 pixels"
             }
 
-            fun floats(key: String): FloatArray {
-                val arr = output.getJSONArray(key)
-                return FloatArray(arr.length()) { arr.getDouble(it).toFloat() }
+            fun floatsOrNull(key: String): FloatArray? = output.optJSONArray(key)?.let { arr ->
+                FloatArray(arr.length()) { arr.getDouble(it).toFloat() }
             }
 
             fun strings(key: String): List<String> {
@@ -279,17 +342,27 @@ class NutritionEstimator private constructor(
                 return List(arr.length()) { arr.getString(it) }
             }
 
-            val mu = floats("mu")
-            val sd = floats("sd")
             val targets = strings("targets")
+            // The v4 line trains on z-scores; the earlier v1 model trained on raw
+            // units. The export notebook measures which one a head is and records
+            // it, because inverting a raw head (or not inverting a z-scored one)
+            // produces numbers that are wrong by orders of magnitude.
+            val standardized = output.optBoolean("standardized", true)
+            val mu = if (standardized) {
+                requireNotNull(floatsOrNull("mu")) { "standardized head but no mu in $SIDECAR_ASSET" }
+            } else {
+                FloatArray(targets.size)
+            }
+            val sd = if (standardized) {
+                requireNotNull(floatsOrNull("sd")) { "standardized head but no sd in $SIDECAR_ASSET" }
+            } else {
+                FloatArray(targets.size) { 1f }
+            }
             require(mu.size == targets.size && sd.size == targets.size) {
                 "mu/sd/targets length mismatch in $SIDECAR_ASSET"
             }
             require(targets.size == 5) {
                 "expected 5 targets, got ${targets.size}: $targets"
-            }
-            require(output.optBoolean("standardized", true)) {
-                "sidecar says outputs are not standardized, but estimate() inverts z-scores"
             }
 
             val maeObj = root.optJSONObject("test_mae")

@@ -62,8 +62,13 @@ object ScanStore {
     @Volatile
     private var triedLoad = false
 
-    /** True once the model is known to be present; drives the "live model" badge. */
-    val modelAvailable: Boolean get() = estimator != null
+    /**
+     * True once the model has loaded. Compose state, so captions that read it
+     * update when the background load finishes rather than keeping whatever
+     * they showed on the first frame.
+     */
+    var modelAvailable: Boolean by mutableStateOf(false)
+        private set
 
     val modelLabel: String
         get() = estimator?.let { "${it.spec.variant} · ${it.accelerator}" } ?: "sample data"
@@ -92,6 +97,7 @@ object ScanStore {
                 if (triedLoad) return@withLock
                 triedLoad = true
                 estimator = NutritionEstimator.loadOrNull(app)
+                modelAvailable = estimator != null
                 if (estimator == null && state is State.Idle) state = State.NoModel
             }
         }
@@ -109,6 +115,7 @@ object ScanStore {
                 if (!triedLoad) {
                     triedLoad = true
                     estimator = NutritionEstimator.loadOrNull(app)
+                    modelAvailable = estimator != null
                 }
                 val engine = estimator
                 if (engine == null) {
@@ -130,6 +137,24 @@ object ScanStore {
             }
         }
     }
+
+    private val loggedScans = mutableSetOf<String>()
+
+    /**
+     * Records that the scan behind [view] went into [log], returning false if it
+     * already did. Stops a double tap on "Log meal", or re-entering the result
+     * screen, from adding the same plate twice. Keyed per log because each
+     * experience keeps its own list.
+     */
+    fun claimForLog(view: DishView, log: String): Boolean =
+        !view.live || loggedScans.add("$log:${view.scanId}")
+
+    /** True while a photo is being run; logging then would record the previous plate. */
+    val busy: Boolean get() = state is State.Running
+
+    /** Current wall-clock time as the log screens print it. */
+    fun nowLabel(): String = java.time.LocalTime.now()
+        .format(java.time.format.DateTimeFormatter.ofPattern("H:mm"))
 
     /** Drops back to the camera stage without discarding the last good estimate. */
     fun reset() {
@@ -155,6 +180,8 @@ data class DishView(
     val detail: String,
     /** Non-null only for a live estimate: the model's measured test error. */
     val errorNote: String?,
+    /** Identity of the scan behind a live view; 0 for the sample dish. */
+    val scanId: Long,
 ) {
     companion object {
         private fun Float.g1(): Double = (this * 10f).toDouble().let { Math.round(it) / 10.0 }
@@ -172,6 +199,7 @@ data class DishView(
                     live = true,
                     detail = "on-device · ${e.variant} · ${e.latencyMs} ms",
                     errorNote = ScanStore.maeNote,
+                    scanId = e.scanId,
                 )
             } else {
                 DishView(
@@ -184,6 +212,7 @@ data class DishView(
                     live = false,
                     detail = "sample data · no model installed",
                     errorNote = null,
+                    scanId = 0L,
                 )
             }
         }

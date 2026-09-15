@@ -21,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,10 +54,12 @@ fun ByteBiteApp() {
             NavHost(navController = nav, startDestination = "chooser") {
                 composable("chooser") {
                     ChooserScreen(
+                        onFusion = { nav.navigate("fusion") },
                         onKitchen = { nav.navigate("kitchen") },
                         onGlucose = { nav.navigate("glucose") }
                     )
                 }
+                composable("fusion") { FusionExperience() }
                 composable("kitchen") { KitchenExperience() }
                 composable("glucose") { GlucoseExperience() }
             }
@@ -64,7 +68,12 @@ fun ByteBiteApp() {
 }
 
 @Composable
-private fun ChooserScreen(onKitchen: () -> Unit, onGlucose: () -> Unit) {
+private fun ChooserScreen(onFusion: () -> Unit, onKitchen: () -> Unit, onGlucose: () -> Unit) {
+    // Load the model as soon as the app opens, so the footer can say whether
+    // this build is running the real model before anyone picks an experience.
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { ScanStore.warmUp(context) }
+
     Column(
         Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -78,13 +87,21 @@ private fun ChooserScreen(onKitchen: () -> Unit, onGlucose: () -> Unit) {
             fontFamily = FontFamily.Serif
         )
         Text(
-            "Nutrition from a photo \u2014 GUI prototype",
+            "Nutrition from a photo \u2014 estimated on your phone",
             modifier = Modifier.padding(top = 6.dp),
             color = Color(0xFF7A7F6E),
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(30.dp))
+        ExperienceCard(
+            bg = Color(0xFFFDF0EA),
+            dot = Color(0xFFE4674E),
+            title = "ByteBite Combined",
+            sub = "scan \u00B7 glucose \u00B7 log \u00B7 manual",
+            onClick = onFusion
+        )
+        Spacer(Modifier.height(14.dp))
         ExperienceCard(
             bg = Color(0xFFF1F5EA),
             dot = Color(0xFF7BA05B),
@@ -102,7 +119,8 @@ private fun ChooserScreen(onKitchen: () -> Unit, onGlucose: () -> Unit) {
         )
         Spacer(Modifier.weight(1f))
         Text(
-            "Prototype \u00B7 sample data only",
+            if (ScanStore.modelAvailable) "On-device model \u00B7 ${ScanStore.modelLabel}"
+            else "No model installed \u00B7 sample data only",
             modifier = Modifier.padding(bottom = 26.dp),
             color = Color(0xFFA0A594),
             fontSize = 11.sp,

@@ -71,9 +71,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     // On-device inference
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.gpu)
-    implementation(libs.tensorflow.lite.gpu.api)
+    implementation(libs.litert)
+    implementation(libs.litert.gpu)
+    implementation(libs.litert.gpu.api)
     implementation(libs.androidx.exifinterface)
 
     debugImplementation(libs.androidx.ui.tooling)

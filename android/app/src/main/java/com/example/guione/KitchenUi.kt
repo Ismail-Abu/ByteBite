@@ -305,6 +305,17 @@ private fun PlateScreen() {
     val running = ScanStore.state is ScanStore.State.Running
     val failed = ScanStore.state as? ScanStore.State.Failed
 
+    // The diary has no "log" button: a snap is the entry. Keyed on the scan so
+    // it fires once per new plate, not on every recomposition.
+    LaunchedEffect(dish.scanId) {
+        if (dish.live && ScanStore.claimForLog(dish, "kitchen")) {
+            SampleData.kitchenMeals.add(
+                0,
+                KitchenMeal(dish.name, dish.kcal, SampleData.slotNow(), KSage, SampleData.today)
+            )
+        }
+    }
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(top = 10.dp)
     ) {

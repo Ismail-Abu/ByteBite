@@ -12,7 +12,7 @@ navigation = "2.8.5"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
 composeBom = "2024.12.01"
-tflite = "2.17.0"
+litert = "1.4.2"
 exifinterface = "1.4.2"
 orgJson = "20260814"
 
@@ -36,13 +36,15 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
-# LiteRT (TensorFlow Lite) runtime for on-device inference.
-tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tflite" }
+# LiteRT runtime: the maintained successor to org.tensorflow:tensorflow-lite,
+# same org.tensorflow.lite Java API. 1.4.x ships 16 KB page-aligned native
+# libraries for every ABI, so it loads normally on 16 KB-page devices.
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
 # GPU delegate: usable by the float variants only; guarded at load time so an
 # unsupported driver falls back to CPU instead of failing.
-tensorflow-lite-gpu = { group = "org.tensorflow", name = "tensorflow-lite-gpu", version.ref = "tflite" }
+litert-gpu = { group = "com.google.ai.edge.litert", name = "litert-gpu", version.ref = "litert" }
 # CompatibilityList / GpuDelegateFactory.Options live here, not in -gpu.
-tensorflow-lite-gpu-api = { group = "org.tensorflow", name = "tensorflow-lite-gpu-api", version.ref = "tflite" }
+litert-gpu-api = { group = "com.google.ai.edge.litert", name = "litert-gpu-api", version.ref = "litert" }
 # Real org.json for JVM unit tests: the android.jar on the unit-test classpath
 # ships org.json as stubs that throw "not mocked" when called.
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }

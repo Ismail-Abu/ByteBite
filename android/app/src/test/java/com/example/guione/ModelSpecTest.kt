@@ -20,6 +20,7 @@ class ModelSpecTest {
         targets: String = """["calories","mass","fat","carb","protein"]""",
         mu: String = "[255.1,214.9,12.7,19.4,18.2]",
         sd: String = "[230.4,162.3,11.8,17.1,16.5]",
+        standardized: Boolean = true,
         extra: String = "",
     ) = """
     {
@@ -34,7 +35,7 @@ class ModelSpecTest {
       "output": {
         "targets": $targets,
         "units": ["kcal","g","g","g","g"],
-        "standardized": true,
+        "standardized": $standardized,
         "mu": $mu,
         "sd": $sd
       }$extra
@@ -98,6 +99,24 @@ class ModelSpecTest {
             floatArrayOf(42.02f, 27.0f, 3.17f, 4.12f, 4.29f),
             withMae.testMae,
             1e-3f,
+        )
+    }
+
+    /**
+     * The v1 model was trained on raw kcal and grams. Its sidecar says so, and the
+     * scaling must collapse to the identity whatever mu/sd happen to be present.
+     */
+    @Test
+    fun `raw unit head gets identity scaling`() {
+        val spec = NutritionEstimator.parseSpec(sidecar(standardized = false))
+        assertArrayEquals(FloatArray(5), spec.mu, 0f)
+        assertArrayEquals(FloatArray(5) { 1f }, spec.sd, 0f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `standardized head without stats is rejected`() {
+        NutritionEstimator.parseSpec(
+            sidecar().replace(Regex(""""mu": \[[^\]]*\],"""), "")
         )
     }
 
