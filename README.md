@@ -66,6 +66,8 @@ The trained Keras model is converted to LiteRT (TensorFlow Lite) by [`notebooks/
 
 `android/README_MODEL.md` covers the routes considered (LiteRT variants, ONNX Runtime Mobile, ExecuTorch, a lighter backbone), the delegate choices, and the three preprocessing details that silently break this kind of port. The `.tflite` is not committed; with `assets/` empty the app builds and runs as the UI prototype on sample data, clearly labelled as such.
 
+To build it, open `android/` in Android Studio, or run `./gradlew installDebug` from that folder with a device attached. [`android/README.md`](android/README.md) has the full steps and the tests.
+
 ## Future work
 
 - **Depth.** Nutrition5k ships overhead depth images that this work does not use. Depth should improve portion size estimation, which is the main source of calorie and mass error.

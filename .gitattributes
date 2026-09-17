@@ -13,3 +13,7 @@
 # The Android app is a demo wrapper around the model; the research is in notebooks/.
 # Excluded from language stats so the repo reads as the ML work it is.
 android/** linguist-detectable=false
+
+# Keep the Gradle launchers runnable on every OS.
+gradlew text eol=lf
+*.bat text eol=crlf
