@@ -90,6 +90,8 @@ android/                       Kotlin / Jetpack Compose app
   README_MODEL.md              conversion routes considered, delegates, and the
                                preprocessing contract the app must honour
 paper/                         write-up and figures
+docs/research/                 flowcharts of the research and the final pipeline,
+                               plus notes on why each decision was made
 ```
 
 Set `NUTRITION5K_DIR` to your local Nutrition5k path before running the notebooks.
