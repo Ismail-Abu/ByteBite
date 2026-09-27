@@ -44,3 +44,6 @@ Thumbs.db
 # Secrets
 .env
 *.key
+
+# PhotoCheckTest photos: Nutrition5k samples and stock images, not ours to redistribute
+android/app/src/androidTest/assets/photocheck/
