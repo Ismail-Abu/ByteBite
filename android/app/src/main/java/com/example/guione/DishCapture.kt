@@ -140,7 +140,11 @@ private fun rotate(src: Bitmap, degrees: Float): Bitmap {
     return out
 }
 
-private fun sampleSizeFor(width: Int, height: Int, maxEdge: Int): Int {
+/**
+ * Largest power-of-two BitmapFactory downsample that keeps the longer edge at or
+ * above [maxEdge]. Internal so it can be unit-tested without decoding a real file.
+ */
+internal fun sampleSizeFor(width: Int, height: Int, maxEdge: Int): Int {
     var sample = 1
     var w = width
     var h = height
