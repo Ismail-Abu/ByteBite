@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -222,7 +223,8 @@ private fun GCameraScreen(onShutter: () -> Unit, onPick: () -> Unit) {
             )
             Text(
                 "or choose an existing photo",
-                modifier = Modifier.padding(top = 8.dp).clickable(onClick = onPick),
+                modifier = Modifier.padding(top = 8.dp)
+                    .clickable(onClickLabel = "Pick a photo from gallery", role = Role.Button, onClick = onPick),
                 color = GBlue,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
@@ -361,7 +363,7 @@ private fun GTodayScreen(onScan: () -> Unit) {
                 .shadow(10.dp, RoundedCornerShape(22.dp), clip = false)
                 .clip(RoundedCornerShape(22.dp))
                 .background(Brush.horizontalGradient(listOf(GBlue, GTeal)))
-                .clickable(onClick = onScan),
+                .clickable(onClickLabel = "Scan a meal", role = Role.Button, onClick = onScan),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -566,7 +568,7 @@ private fun GScanResultScreen(onLog: () -> Unit) {
                     .height(54.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(GInk)
-                    .clickable(onClick = onLog),
+                    .clickable(onClickLabel = "Log meal", role = Role.Button, onClick = onLog),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Log meal", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
