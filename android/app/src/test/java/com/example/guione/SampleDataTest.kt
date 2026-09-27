@@ -1,5 +1,6 @@
 package com.example.guione
 
+import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -19,5 +20,21 @@ class SampleDataTest {
         assertEquals("lunch", SampleData.slotFor(15))
         assertEquals("dinner", SampleData.slotFor(16))
         assertEquals("dinner", SampleData.slotFor(23))
+    }
+
+    private fun meal(carbs: Double, date: java.time.LocalDate) = GlucoseMeal(
+        name = "test", carbs = carbs, time = "12:00", source = "test",
+        emoji = "", tint = Color.White, spike = "gentle rise", spikeBad = false, date = date,
+    )
+
+    @Test
+    fun `carbsToday sums only todays meals and rounds`() {
+        val meals = listOf(
+            meal(45.6, SampleData.today),
+            meal(13.0, SampleData.today),
+            meal(52.0, SampleData.today.minusDays(1)),   // yesterday: excluded
+        )
+        // 45.6 + 13.0 = 58.6 -> 59; the 52.0 from yesterday must not count.
+        assertEquals(59, SampleData.carbsToday(meals))
     }
 }
