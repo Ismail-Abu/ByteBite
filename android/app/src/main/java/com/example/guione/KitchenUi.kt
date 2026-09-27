@@ -4,6 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -212,7 +215,7 @@ private fun SnapScreen(onSnap: () -> Unit, onPick: () -> Unit) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RoundIcon("\uD83D\uDDBC", onClick = onPick)
+            RoundIcon("\uD83D\uDDBC", label = "Pick a photo from gallery", onClick = onPick)
             ShutterButton(
                 ringColor = KGreen,
                 gapColor = KBg,
@@ -256,14 +259,22 @@ private fun FoodPlate() {
 }
 
 @Composable
-private fun RoundIcon(glyph: String, onClick: (() -> Unit)? = null) {
+private fun RoundIcon(glyph: String, label: String? = null, onClick: (() -> Unit)? = null) {
     Surface(
         shape = CircleShape,
         color = Color.White,
         shadowElevation = 4.dp,
         modifier = Modifier
             .size(48.dp)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(
+                // A bare emoji glyph is read literally by TalkBack ("framed picture");
+                // give the control a real label and a button role when it acts.
+                if (onClick != null)
+                    Modifier.clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                else if (label != null)
+                    Modifier.semantics { contentDescription = label }
+                else Modifier
+            )
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(glyph, fontSize = 19.sp)
