@@ -2,6 +2,7 @@ package com.example.guione
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,8 +65,8 @@ fun MonthCalendar(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
-            ChevronChip("\u2039", mutedColor) { month = month.minusMonths(1) }
-            ChevronChip("\u203A", mutedColor, Modifier.padding(start = 8.dp)) { month = month.plusMonths(1) }
+            ChevronChip("\u2039", mutedColor, label = "Previous month") { month = month.minusMonths(1) }
+            ChevronChip("\u203A", mutedColor, Modifier.padding(start = 8.dp), label = "Next month") { month = month.plusMonths(1) }
         }
 
         // Day-of-week header, Monday first
@@ -137,13 +138,15 @@ private fun ChevronChip(
     glyph: String,
     color: Color,
     modifier: Modifier = Modifier,
+    label: String? = null,
     onClick: () -> Unit
 ) {
     Box(
         modifier
             .size(32.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            // The chevron glyph alone gives a screen reader nothing to announce.
+            .clickable(onClickLabel = label, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(glyph, color = color, fontSize = 20.sp, fontWeight = FontWeight.Bold)
