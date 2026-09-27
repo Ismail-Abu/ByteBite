@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 /**
  * Holds the result of the most recent scan and owns the one [NutritionEstimator]
@@ -197,8 +198,11 @@ data class DishView(
             return if (e != null) {
                 DishView(
                     name = "Scanned dish",
-                    kcal = e.calories.toInt().coerceAtLeast(0),
-                    massG = e.massG.toInt().coerceAtLeast(0),
+                    // Round rather than truncate: the grams below round via g1(), so
+                    // truncating kcal/mass here made 541.8 kcal read as 541 while
+                    // 45.6 g carbs rounded up — inconsistent for the same estimate.
+                    kcal = e.calories.roundToInt().coerceAtLeast(0),
+                    massG = e.massG.roundToInt().coerceAtLeast(0),
                     carbG = e.carbG.g1(),
                     proteinG = e.proteinG.g1(),
                     fatG = e.fatG.g1(),
