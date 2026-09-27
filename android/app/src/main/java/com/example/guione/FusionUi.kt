@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -268,7 +269,7 @@ private fun FCameraScreen(
                     .shadow(4.dp, CircleShape, clip = false)
                     .clip(CircleShape)
                     .background(Color.White)
-                    .clickable(onClick = onSettings),
+                    .clickable(onClickLabel = "Settings", role = Role.Button, onClick = onSettings),
                 contentAlignment = Alignment.Center
             ) {
                 Text("\u2699\uFE0F", fontSize = 18.sp)
@@ -331,14 +332,16 @@ private fun FCameraScreen(
             )
             Text(
                 "or choose a photo",
-                modifier = Modifier.padding(top = 6.dp).clickable(onClick = onPick),
+                modifier = Modifier.padding(top = 6.dp)
+                    .clickable(onClickLabel = "Pick a photo from gallery", role = Role.Button, onClick = onPick),
                 color = FBlue,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 "Not picking it up? Enter it manually",
-                modifier = Modifier.padding(top = 6.dp).clickable(onClick = onManual),
+                modifier = Modifier.padding(top = 6.dp)
+                    .clickable(onClickLabel = "Add a meal manually", role = Role.Button, onClick = onManual),
                 color = FBlue,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.ExtraBold
@@ -409,7 +412,7 @@ private fun FSettingsScreen(onDone: () -> Unit) {
                 .shadow(10.dp, RoundedCornerShape(18.dp), clip = false)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Brush.horizontalGradient(listOf(FBlue, FBlueDeep)))
-                .clickable(onClick = onDone),
+                .clickable(onClickLabel = "Done", role = Role.Button, onClick = onDone),
             contentAlignment = Alignment.Center
         ) {
             Text("Save profile", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -581,7 +584,7 @@ private fun FScanResultScreen(onLog: () -> Unit, onEdit: () -> Unit) {
                     .height(54.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .border(2.dp, FBlue, RoundedCornerShape(18.dp))
-                    .clickable(onClick = onEdit),
+                    .clickable(onClickLabel = "Edit meal", role = Role.Button, onClick = onEdit),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Edit details", color = FBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -592,7 +595,7 @@ private fun FScanResultScreen(onLog: () -> Unit, onEdit: () -> Unit) {
                     .height(54.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(FInk)
-                    .clickable(onClick = onLog),
+                    .clickable(onClickLabel = "Log meal", role = Role.Button, onClick = onLog),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Log meal", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -1137,7 +1140,7 @@ private fun FManualScreen(
                 .shadow(10.dp, RoundedCornerShape(18.dp), clip = false)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Brush.horizontalGradient(listOf(FBlue, FBlueDeep)))
-                .clickable(onClick = onAdd),
+                .clickable(onClickLabel = "Add", role = Role.Button, onClick = onAdd),
             contentAlignment = Alignment.Center
         ) {
             Text("Add to today's log", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
