@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -144,7 +145,10 @@ private fun ExperienceCard(
             .shadow(6.dp, RoundedCornerShape(26.dp), clip = false)
             .clip(RoundedCornerShape(26.dp))
             .background(bg)
-            .clickable(onClick = onClick)
+            // Tag the tappable card as a button and label it, so TalkBack announces
+            // "Open <title>, button" instead of reading the two loose text lines
+            // with no hint that the whole card is actionable.
+            .clickable(onClickLabel = "Open $title", role = Role.Button, onClick = onClick)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(18.dp),
