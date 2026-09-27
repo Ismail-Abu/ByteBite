@@ -120,6 +120,24 @@ class ModelSpecTest {
         )
     }
 
+    /** Missing sd is as fatal as missing mu: half a scaler inverts to nonsense. */
+    @Test(expected = IllegalArgumentException::class)
+    fun `standardized head without sd is rejected`() {
+        NutritionEstimator.parseSpec(
+            sidecar().replace(Regex(""",\s*"sd": \[[^\]]*\]"""), "")
+        )
+    }
+
+    /** The int8 export still ships a z-scored head, so mu/sd must still be read. */
+    @Test
+    fun `quantized input still parses the standardized scaler`() {
+        val spec = NutritionEstimator.parseSpec(sidecar(dtype = "uint8"))
+        assertTrue(spec.quantizedInput)
+        assertArrayEquals(
+            floatArrayOf(255.1f, 214.9f, 12.7f, 19.4f, 18.2f), spec.mu, 1e-3f,
+        )
+    }
+
     /** A partial test_mae block is dropped rather than half-displayed. */
     @Test
     fun `incomplete test mae is ignored`() {
