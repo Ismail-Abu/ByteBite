@@ -228,6 +228,9 @@ class NutritionEstimator private constructor(
         private const val TAG = "NutritionEstimator"
         const val SIDECAR_ASSET = "bytebite_model.json"
 
+        /** XNNPACK worker threads for the CPU path; 4 is the dependable baseline. */
+        private const val CPU_THREADS = 4
+
         /**
          * Loads the model from assets. Returns null when the assets are absent —
          * the repo does not carry the 22 MB binary, so a fresh clone builds and
@@ -246,7 +249,7 @@ class NutritionEstimator private constructor(
             val spec = parseSpec(context.assets.open(SIDECAR_ASSET)
                 .bufferedReader().use { it.readText() })
 
-            val options = Interpreter.Options().apply { numThreads = 4 }
+            val options = Interpreter.Options().apply { numThreads = CPU_THREADS }
             var delegate: GpuDelegate? = null
             var accelerator = "CPU (XNNPACK, 4 threads)"
 
