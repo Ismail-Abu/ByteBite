@@ -298,7 +298,9 @@ fun ShutterButton(
             .clip(CircleShape)
             .background(Color.White)
             .border(6.dp, gapColor, CircleShape)
-            .clickable(onClick = onClick),
+            // The shutter is the app's primary action but draws as bare circles;
+            // without this a screen reader finds an unlabeled tap target.
+            .clickable(onClickLabel = "Take photo", role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Box(
