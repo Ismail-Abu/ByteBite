@@ -37,4 +37,11 @@ class SampleDataTest {
         // 45.6 + 13.0 = 58.6 -> 59; the 52.0 from yesterday must not count.
         assertEquals(59, SampleData.carbsToday(meals))
     }
+
+    @Test
+    fun `carbsToday is zero when nothing was logged today`() {
+        val meals = listOf(meal(80.0, SampleData.today.minusDays(1)))
+        assertEquals(0, SampleData.carbsToday(meals))
+        assertEquals(0, SampleData.carbsToday(emptyList()))
+    }
 }
