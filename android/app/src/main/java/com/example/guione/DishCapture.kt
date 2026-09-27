@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -73,6 +74,8 @@ fun rememberDishCapture(onCaptured: (Bitmap) -> Unit): DishCapture {
 /** Longest edge kept after downsampling. The model sees 300 px; this is headroom. */
 private const val MAX_EDGE = 1280
 
+private const val TAG = "DishCapture"
+
 private fun newPhotoUri(context: Context): Uri {
     val dir = File(context.cacheDir, "captures").apply { mkdirs() }
     // One reused filename: these frames are disposable and a demo should not
@@ -122,6 +125,10 @@ private fun decodeUpright(context: Context, uri: Uri): Bitmap? {
 
         if (degrees == 0f) decoded else rotate(decoded, degrees)
     } catch (e: Exception) {
+        // A corrupt file, an unreadable Uri, or an OOM on a huge frame. Returning
+        // null lets the caller stay on the camera stage; log it so a capture that
+        // silently never produces an estimate is diagnosable rather than a mystery.
+        Log.w(TAG, "could not decode captured image from $uri", e)
         null
     }
 }
