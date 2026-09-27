@@ -101,7 +101,13 @@ object SampleData {
         meals.filter { it.date == today }.sumOf { it.carbs }.roundToInt()
 
     /** Meal slot for a log entry made now. */
-    fun slotNow(): String = when (java.time.LocalTime.now().hour) {
+    fun slotNow(): String = slotFor(java.time.LocalTime.now().hour)
+
+    /**
+     * Maps a 24-hour clock hour to a meal slot. Split out from [slotNow] so the
+     * boundaries can be unit-tested without depending on the wall clock.
+     */
+    fun slotFor(hour: Int): String = when (hour) {
         in 4..10 -> "breakfast"
         in 11..15 -> "lunch"
         else -> "dinner"
