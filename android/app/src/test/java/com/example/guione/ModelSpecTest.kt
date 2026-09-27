@@ -128,4 +128,30 @@ class ModelSpecTest {
         )
         assertNull(spec.testMae)
     }
+
+    @Test
+    fun `parses geometry the preprocessor depends on`() {
+        val spec = NutritionEstimator.parseSpec(sidecar())
+        assertEquals(1.333333f, spec.sourceAspect, 1e-5f)
+        // resize_mode is what tells prepare() to stretch the full frame rather than
+        // crop to square; a wrong default here silently biases mass and calories.
+        assertEquals("stretch_full_frame", spec.resizeMode)
+        assertEquals(listOf("kcal", "g", "g", "g", "g"), spec.units)
+    }
+
+    @Test
+    fun `variant defaults to unknown when the sidecar omits it`() {
+        val spec = NutritionEstimator.parseSpec(
+            sidecar().replace(""""variant": "float16",""", "")
+        )
+        assertEquals("unknown", spec.variant)
+    }
+
+    @Test
+    fun `resize_mode falls back to stretching the full frame`() {
+        val spec = NutritionEstimator.parseSpec(
+            sidecar().replace(""""resize_mode": "stretch_full_frame",""", "")
+        )
+        assertEquals("stretch_full_frame", spec.resizeMode)
+    }
 }
