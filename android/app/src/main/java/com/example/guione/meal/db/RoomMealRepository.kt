@@ -71,6 +71,27 @@ class RoomMealRepository(
         meal
     }
 
+    override suspend fun saveInferredMeal(
+        valid: MealInput.Valid,
+        rawNutrition: com.example.guione.meal.Nutrition,
+        mealId: String,
+        revisionId: String,
+        correctionId: String,
+    ): Meal = db.withTransaction {
+        val now = clock.instant()
+        val inferred = MealRevision(revisionId, mealId, rawNutrition, NutritionSource.INFERRED, null, now)
+        dao.upsertRevision(inferred.toEntity())
+        var current = revisionId
+        if (valid.nutrition != rawNutrition) {
+            val corrected = MealRevision(correctionId, mealId, valid.nutrition, NutritionSource.CORRECTED, revisionId, now)
+            dao.upsertRevision(corrected.toEntity())
+            current = correctionId
+        }
+        val meal = Meal(mealId, valid.occurredAt, valid.occurrenceOffset, valid.name, now, now, current)
+        dao.upsertMeal(meal.toEntity())
+        meal
+    }
+
     override suspend fun correctMeal(mealId: String, valid: MealInput.Valid): Meal? =
         db.withTransaction {
             val existing = dao.meal(mealId) ?: return@withTransaction null

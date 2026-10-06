@@ -158,6 +158,8 @@ class AddEditMealViewModelTest {
         override fun observeMeal(id: String): Flow<MealWithRevisions?> = kotlinx.coroutines.flow.flowOf(null)
         override suspend fun saveManualMeal(valid: MealInput.Valid, mealId: String, revisionId: String) =
             throw RuntimeException("disk full")
+        override suspend fun saveInferredMeal(valid: MealInput.Valid, rawNutrition: Nutrition, mealId: String, revisionId: String, correctionId: String) =
+            throw RuntimeException("disk full")
         override suspend fun correctMeal(mealId: String, valid: MealInput.Valid) = throw RuntimeException("disk full")
         override suspend fun getMeal(id: String): MealWithRevisions? = null
         override suspend fun listMeals() = emptyList<com.example.guione.meal.Meal>()

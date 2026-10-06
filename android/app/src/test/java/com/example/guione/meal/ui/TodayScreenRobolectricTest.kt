@@ -33,7 +33,7 @@ class TodayScreenRobolectricTest {
     private fun render() {
         compose.setContent {
             ByteBiteTheme {
-                TodayScreen(onAddMeal = {}, onOpenMeal = {}, onOpenHistory = {}, onOpenSettings = {}, bottomBar = {})
+                TodayScreen(onAddMeal = {}, onScan = {}, onOpenMeal = {}, onOpenHistory = {}, onOpenSettings = {}, bottomBar = {})
             }
         }
     }

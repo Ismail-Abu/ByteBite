@@ -107,6 +107,31 @@ class MealRepositoryTest {
         assertTrue(repo.listMeals().isEmpty())
     }
 
+    @Test fun `inferred save keeps the raw estimate as the original revision`() = runBlocking {
+        val repo = repoWithCounter()
+        val raw = Nutrition(caloriesKcal = 500.0, carbsGrams = 45.0)
+        // reviewed unchanged -> single INFERRED revision
+        repo.saveInferredMeal(valid(nutrition = raw), raw, "m1", "r1", "c1")
+        val got = repo.getMeal("m1")!!
+        assertEquals(1, got.revisions.size)
+        assertEquals(NutritionSource.INFERRED, got.current.source)
+        assertEquals(500.0, got.current.nutrition.caloriesKcal!!, 0.0)
+    }
+
+    @Test fun `inferred save with an edit keeps original estimate and appends a correction`() = runBlocking {
+        val repo = repoWithCounter()
+        val raw = Nutrition(caloriesKcal = 500.0, carbsGrams = 45.0)
+        val reviewed = Nutrition(caloriesKcal = 520.0, carbsGrams = 50.0) // user adjusted
+        repo.saveInferredMeal(valid(nutrition = reviewed), raw, "m1", "r1", "c1")
+        val got = repo.getMeal("m1")!!
+        assertEquals(2, got.revisions.size)
+        assertEquals(NutritionSource.INFERRED, got.original.source)
+        assertEquals(45.0, got.original.nutrition.carbsGrams!!, 0.0)   // raw estimate kept
+        assertEquals(NutritionSource.CORRECTED, got.current.source)
+        assertEquals(50.0, got.current.nutrition.carbsGrams!!, 0.0)    // reviewed value current
+        assertEquals("r1", got.current.originalEstimateRef)
+    }
+
     @Test fun `deleteAll clears everything`() = runBlocking {
         val repo = repoWithCounter()
         repo.saveManualMeal(valid(), mealId = "m1", revisionId = "r1")

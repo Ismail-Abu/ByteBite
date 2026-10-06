@@ -78,6 +78,28 @@ class InMemoryMealRepository(
         meal
     }
 
+    override suspend fun saveInferredMeal(
+        valid: MealInput.Valid,
+        rawNutrition: Nutrition,
+        mealId: String,
+        revisionId: String,
+        correctionId: String,
+    ): Meal = lock.withLock {
+        val now = clock.instant()
+        val inferred = MealRevision(revisionId, mealId, rawNutrition, NutritionSource.INFERRED, null, now)
+        val chain = mutableListOf(inferred)
+        var current = revisionId
+        if (valid.nutrition != rawNutrition) {
+            chain += MealRevision(correctionId, mealId, valid.nutrition, NutritionSource.CORRECTED, revisionId, now)
+            current = correctionId
+        }
+        val meal = Meal(mealId, valid.occurredAt, valid.occurrenceOffset, valid.name, now, now, current)
+        meals[mealId] = meal
+        revisions[mealId] = chain
+        bump()
+        meal
+    }
+
     override suspend fun correctMeal(mealId: String, valid: MealInput.Valid): Meal? = lock.withLock {
         val existing = meals[mealId] ?: return@withLock null
         val chain = revisions.getValue(mealId)

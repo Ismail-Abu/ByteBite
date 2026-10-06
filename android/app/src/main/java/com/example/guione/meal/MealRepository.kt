@@ -78,6 +78,21 @@ interface MealRepository {
     ): Meal
 
     /**
+     * Persists a photo-estimated meal. The raw model output is stored as the
+     * [NutritionSource.INFERRED] original revision; if the user adjusted any value
+     * in review ([MealInput.Valid.nutrition] differs from [rawNutrition]), a
+     * [NutritionSource.CORRECTED] revision is appended and becomes current, so the
+     * original estimate is always preserved alongside the correction.
+     */
+    suspend fun saveInferredMeal(
+        valid: MealInput.Valid,
+        rawNutrition: Nutrition,
+        mealId: String = newId(),
+        revisionId: String = newId(),
+        correctionId: String = newId(),
+    ): Meal
+
+    /**
      * Appends a [NutritionSource.CORRECTED] revision to an existing meal and moves
      * the meal's current pointer to it. The new revision references the meal's
      * original revision as its [MealRevision.originalEstimateRef], and every

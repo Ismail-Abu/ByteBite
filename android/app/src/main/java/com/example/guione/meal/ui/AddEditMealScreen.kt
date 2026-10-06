@@ -86,7 +86,7 @@ fun AddEditMealScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.editing) "Edit meal" else "Add meal") },
+                title = { Text(if (state.editing) "Edit meal" else if (state.inferred) "Review estimate" else "Add meal") },
                 navigationIcon = {
                     IconButton(onClick = { handleBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -113,6 +113,22 @@ fun AddEditMealScreen(
                 .padding(horizontal = Spacing.lg),
         ) {
             Spacer(Modifier.height(Spacing.sm))
+
+            if (state.inferred) {
+                Text(
+                    "Estimated from your photo. Review and adjust before saving.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                com.example.guione.ScanStore.maeNote?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(Spacing.md))
+            }
 
             OutlinedTextField(
                 value = state.name,

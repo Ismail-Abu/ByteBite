@@ -35,6 +35,8 @@ object Routes {
     const val ADD = "add"
     const val EDIT = "edit/{mealId}"
     const val DETAIL = "detail/{mealId}"
+    const val CAPTURE = "capture"
+    const val REVIEW = "review?scan=true"
     fun edit(mealId: String) = "edit/$mealId"
     fun detail(mealId: String) = "detail/$mealId"
 }
@@ -62,10 +64,26 @@ fun ByteBiteApp() {
             composable(Routes.TODAY) {
                 TodayScreen(
                     onAddMeal = { nav.navigate(Routes.ADD) },
+                    onScan = { nav.navigate(Routes.CAPTURE) },
                     onOpenMeal = { nav.navigate(Routes.detail(it)) },
                     onOpenHistory = { nav.navigateTopLevel(Routes.HISTORY) },
                     onOpenSettings = { nav.navigate(Routes.SETTINGS) },
                     bottomBar = { ByteBiteBottomBar(nav) },
+                )
+            }
+            composable(Routes.CAPTURE) {
+                CaptureScreen(
+                    onBack = { nav.popBackStack() },
+                    onReviewReady = { nav.navigate(Routes.REVIEW) },
+                )
+            }
+            composable(
+                Routes.REVIEW,
+                arguments = listOf(navArgument("scan") { type = NavType.BoolType; defaultValue = true }),
+            ) {
+                AddEditMealScreen(
+                    onBack = { nav.popBackStack() },
+                    onSaved = { nav.popBackStack(Routes.TODAY, inclusive = false) },
                 )
             }
             composable(Routes.HISTORY) {

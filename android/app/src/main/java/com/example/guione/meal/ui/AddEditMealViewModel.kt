@@ -3,8 +3,10 @@ package com.example.guione.meal.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.guione.ScanStore
 import com.example.guione.meal.MealInput
 import com.example.guione.meal.MealRepository
+import com.example.guione.meal.Nutrition
 import com.example.guione.meal.newId
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +61,12 @@ class AddEditMealViewModel(
         val initialized: Boolean = false,
         /** True once the user has changed any field — drives the discard confirm. */
         val edited: Boolean = false,
+        /** True when reviewing a photo estimate (vs. a plain manual entry). */
+        val inferred: Boolean = false,
     )
+
+    /** The meal to edit, or null. Scan-review mode is a separate flag. */
+    private val isScan: Boolean = state.get<Boolean>(ARG_SCAN) == true
 
     private val _ui = MutableStateFlow(UiState())
     val ui: StateFlow<UiState> = _ui.asStateFlow()
@@ -111,9 +118,27 @@ class AddEditMealViewModel(
         } else {
             state[KEY_DRAFT_MEAL_ID] = newId()
             state[KEY_DRAFT_REVISION_ID] = newId()
+            state[KEY_CORRECTION_ID] = newId()
             val now = clock.instant()
             val offset = clock.zone.rules.getOffset(now)
-            val s = UiState(editing = false, occurredAt = now, offset = offset, initialized = true)
+            val est = if (isScan) ScanStore.lastEstimate else null
+            val s = if (est != null) {
+                val raw = est.toNutrition()
+                persistRaw(raw)
+                ScanStore.reset() // consume the Ready state so Capture doesn't re-navigate
+                UiState(
+                    editing = false, inferred = true,
+                    name = "", // let the user name it; the photo doesn't
+                    calories = raw.caloriesKcal.toField(),
+                    mass = raw.massGrams.toField(),
+                    carbs = raw.carbsGrams.toField(),
+                    protein = raw.proteinGrams.toField(),
+                    fat = raw.fatGrams.toField(),
+                    occurredAt = now, offset = offset, initialized = true,
+                )
+            } else {
+                UiState(editing = false, occurredAt = now, offset = offset, initialized = true)
+            }
             _ui.value = s
             persist(s)
         }
@@ -132,6 +157,7 @@ class AddEditMealViewModel(
             offset = ZoneOffset.ofTotalSeconds(state.get<Int>(KEY_OFFSET_SECONDS) ?: 0),
             initialized = true,
             edited = state.get<Boolean>(KEY_EDITED) ?: false,
+            inferred = rawNutritionOrNull() != null,
         )
     }
 
@@ -146,6 +172,21 @@ class AddEditMealViewModel(
         state[KEY_OCCURRED_MS] = s.occurredAt.toEpochMilli()
         state[KEY_OFFSET_SECONDS] = s.offset.totalSeconds
         state[KEY_EDITED] = s.edited
+    }
+
+    private fun persistRaw(n: Nutrition) {
+        state[KEY_RAW_CAL] = n.caloriesKcal ?: Double.NaN
+        state[KEY_RAW_MASS] = n.massGrams ?: Double.NaN
+        state[KEY_RAW_CARB] = n.carbsGrams ?: Double.NaN
+        state[KEY_RAW_PROT] = n.proteinGrams ?: Double.NaN
+        state[KEY_RAW_FAT] = n.fatGrams ?: Double.NaN
+    }
+
+    /** The raw photo estimate, if this is a scan-review; null for manual entry. */
+    private fun rawNutritionOrNull(): Nutrition? {
+        if (state.get<Double>(KEY_RAW_CAL) == null) return null
+        fun v(k: String) = state.get<Double>(k)?.takeIf { !it.isNaN() }
+        return Nutrition(v(KEY_RAW_CAL), v(KEY_RAW_MASS), v(KEY_RAW_CARB), v(KEY_RAW_PROT), v(KEY_RAW_FAT))
     }
 
     fun onName(value: String) = edit { it.copy(name = value, nameError = null, formError = null) }
@@ -193,16 +234,20 @@ class AddEditMealViewModel(
                 val editId = editMealId
                 val draftMealId = state.get<String>(KEY_DRAFT_MEAL_ID) ?: newId()
                 val draftRevisionId = state.get<String>(KEY_DRAFT_REVISION_ID) ?: newId()
+                val correctionId = state.get<String>(KEY_CORRECTION_ID) ?: newId()
+                val raw = rawNutritionOrNull()
                 val valid = result.valid
                 _ui.update { it.copy(saving = true, nameError = null, fieldErrors = emptyMap(), formError = null, saveError = null) }
                 viewModelScope.launch {
                     try {
-                        if (editId != null) {
-                            val updated = repository.correctMeal(editId, valid)
-                                ?: error("This meal no longer exists.")
-                            check(updated.id == editId)
-                        } else {
-                            repository.saveManualMeal(valid, draftMealId, draftRevisionId)
+                        when {
+                            editId != null -> {
+                                val updated = repository.correctMeal(editId, valid)
+                                    ?: error("This meal no longer exists.")
+                                check(updated.id == editId)
+                            }
+                            raw != null -> repository.saveInferredMeal(valid, raw, draftMealId, draftRevisionId, correctionId)
+                            else -> repository.saveManualMeal(valid, draftMealId, draftRevisionId)
                         }
                         saved.send(Unit)
                     } catch (e: Exception) {
@@ -215,6 +260,13 @@ class AddEditMealViewModel(
 
     companion object {
         const val ARG_MEAL_ID = "mealId"
+        const val ARG_SCAN = "scan"
+        private const val KEY_CORRECTION_ID = "ae.correction"
+        private const val KEY_RAW_CAL = "ae.rawCal"
+        private const val KEY_RAW_MASS = "ae.rawMass"
+        private const val KEY_RAW_CARB = "ae.rawCarb"
+        private const val KEY_RAW_PROT = "ae.rawProt"
+        private const val KEY_RAW_FAT = "ae.rawFat"
         private const val KEY_INITIALIZED = "ae.init"
         private const val KEY_NAME = "ae.name"
         private const val KEY_CALORIES = "ae.cal"
@@ -239,3 +291,15 @@ internal fun Double?.toField(): String = when {
 
 private fun Exception.readableMessage(): String =
     message?.takeIf { it.isNotBlank() } ?: "Please try again."
+
+/** The model's raw five outputs as a [Nutrition], floored at zero. */
+private fun com.example.guione.NutritionEstimator.Estimate.toNutrition(): Nutrition {
+    fun f(v: Float): Double = v.coerceAtLeast(0f).toDouble()
+    return Nutrition(
+        caloriesKcal = f(calories),
+        massGrams = f(massG),
+        carbsGrams = f(carbG),
+        proteinGrams = f(proteinG),
+        fatGrams = f(fatG),
+    )
+}
