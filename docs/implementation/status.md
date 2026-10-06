@@ -57,29 +57,51 @@ scattered in-memory `SampleData` with a real, tested data layer:
    export on at `app/schemas`, **no destructive-migration fallback**); pure
    mappers; `MigrationTestHelper` harness wired via androidTest assets.
 
+Milestone 3 (partial) — a working, persisted meal surface reading the data
+layer (the foundation is now used, not just present):
+
+5. **`MealLogViewModel`** over the repository: saved-meal list + today summary
+   (sums only known values) + manual-entry/correction form. Validation via
+   `MealInput`; draft ids in `SavedStateHandle` so a save repeated after process
+   recreation upserts rather than duplicates; editing routes through
+   `correctMeal`. `AppGraph` is the service-locator seam (Room in production,
+   overridable in tests).
+6. **`MealLogScreen`** (stateless Compose, prototype's warm visual character):
+   honest empty state, per-field and form-level validation errors, "Saved"
+   confirmation, a saved-meal history list with an "edited" badge, and
+   edit/delete with a delete confirmation dialog. `MainActivity` now starts on
+   this persisted surface; the three sample-data experiences remain reachable
+   behind a "Design prototype" link until they are consolidated.
+
 ## Checks run (this session)
 
-- `testDebugUnitTest`: **PASS** — 57 tests (baseline 22 + 35 new). New:
-  `MealInputTest` (23), `MealRepositoryTest` (9), `db/MealMappersTest` (3).
+- `testDebugUnitTest`: **PASS** — 66 tests (baseline 22 + 44 new). New:
+  `MealInputTest` (23), `MealRepositoryTest` (9), `db/MealMappersTest` (3),
+  `MealLogViewModelTest` (9).
 - `assembleDebug`: **PASS** — `app/build/outputs/apk/debug/app-debug.apk`
   (~66 MB; size dominated by the LiteRT native libraries).
-- `connectedDebugAndroidTest` on `Medium_Phone` (android-37): **PASS** — 11 run,
-  0 failures. New `RoomMealRepositoryInstrumentedTest` (7, incl. the FK cascade
-  and idempotent save on real SQLite) and `MealMigrationTest` (1) genuinely
-  verified; pre-existing `ModelFixtureTest` (3) skipped via assumption because
-  the model assets are absent (expected — a skipped fixture is not a release
-  pass for ML readiness).
-- `lintDebug`: **PASS** (no errors). 27 pre-existing warnings, all version /
-  obsolete-SdkInt / unused-resource suggestions; none introduced by the data
-  layer and none from its logic.
+- `connectedDebugAndroidTest` on `Medium_Phone` (**API 37 preview**): **PASS**,
+  0 failures. `RoomMealRepositoryInstrumentedTest` (7, incl. the FK cascade and
+  idempotent save on real SQLite) and `MealMigrationTest` (1) genuinely
+  verified; `ModelFixtureTest` (3) skipped (no model assets).
+  `MealLogScreenTest` (6 Compose UI tests) **skipped** on this device: Espresso
+  3.6.1 reflects on `InputManager.getInstance()`, removed in the API 37 preview
+  image. They run on a stable API <= 35 emulator; their screen logic is covered
+  device-independently by `MealLogViewModelTest`. (This machine has no
+  cmdline-tools/sdkmanager to provision a stable image, and only the android-37
+  system image is installed.)
+- `lintDebug`: **PASS** (no errors). ~27 pre-existing warnings, all version /
+  obsolete-SdkInt / unused-resource suggestions; none from the new code's logic.
 
 ## Remaining (next milestones, in brief order)
 
-3. **Wire the UI to the repository** and consolidate navigation: a single app
-   (Fusion as the base), real Home/History/Details/Edit/Settings reading the
-   repository, honest empty states, remove the prototype chooser from the
-   production flow. **Not started** — the existing three-experience Compose UI
-   still runs on in-memory `SampleData`.
+3. **Finish the UI consolidation.** Done: persisted Home + manual entry +
+   history + edit + delete + today summary, started on launch. Remaining: a
+   dedicated meal-detail screen (provenance, original-vs-corrected, optional
+   image, linked forecast), a Settings screen (storage usage, thumbnail
+   retention, delete-all, units, model availability/version), and folding the
+   capture/glucose experiences onto the persisted store so the sample-data
+   prototype and its chooser can be retired from the production flow.
 4. **Capture pipeline as an explicit state machine** (quality → food-gate →
    inference → validation → review → save) with request tracking; move the
    `ScanStore` sealed-state idea into a proper view model over the repository.

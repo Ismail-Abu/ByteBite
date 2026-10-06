@@ -52,7 +52,16 @@ fun ByteBiteApp() {
     val nav = rememberNavController()
     MaterialTheme {
         Surface(Modifier.fillMaxSize(), color = Color(0xFFF6F4EE)) {
-            NavHost(navController = nav, startDestination = "chooser") {
+            NavHost(navController = nav, startDestination = "meals") {
+                // The production surface: real, persisted meals. The three
+                // sample-data experiences below are the design prototype, kept
+                // reachable from here until the capture/glucose flows are
+                // consolidated onto the persisted store.
+                composable("meals") {
+                    com.example.guione.meal.MealLogRoute(
+                        onOpenPrototype = { nav.navigate("chooser") }
+                    )
+                }
                 composable("chooser") {
                     ChooserScreen(
                         onFusion = { nav.navigate("fusion") },
