@@ -26,7 +26,7 @@ You'll see two sets of numbers:
 
 | Source | Dishes | Train / val / test |
 |---|---|---|
-| Paper, root README, export notebook for `v4_` models | 3,259 | 2,281 / 488 / 490 |
+| Paper, [research overview](overview.md), export notebook for `v4_` models | 3,259 | 2,281 / 488 / 490 |
 | `bytebite_v4_walkthrough.md` code, export notebook for `model1_control` | 3,260 | 2,282 / 489 / 489 |
 
 The split code is `int(0.70 * n)` for train, `int(0.15 * n)` for validation, and the rest for test. `int()` truncates, so:

@@ -1,12 +1,14 @@
 # Running ByteBite's model on the phone
 
+> Research implementation notes. Model artifacts are not committed, and the measurements below have not been reverified for a release. Current integration and validation work is tracked in the [model plan](../docs/planning/model-integration.md).
+
 The v4 EfficientNetB3 regressor is a 44 MB Keras model trained on an L4. This
 document covers how it gets onto an Android device, which conversion routes were
 considered, and why the shipped one was chosen.
 
-Inference is **entirely local**. The app declares no `INTERNET` permission, so no
-photo and no estimate can leave the device — worth keeping for a tool whose input
-is a picture of someone's meal and whose output is health data.
+Inference is **entirely local**. The app declares no `INTERNET` permission.
+OS-managed backups and explicit exports need separate controls; see the
+[data and storage plan](../docs/planning/data-storage.md).
 
 ---
 

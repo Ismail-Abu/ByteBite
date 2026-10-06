@@ -1,10 +1,12 @@
 # ByteBite research, explained
 
+These are research references, not a list of completed product features. Start with the [historical research overview](overview.md) for methods and results, or the [implementation plan](../planning/README.md) for current product work. The [results reconciliation note](14-reading-the-results.md) identifies unresolved baseline differences.
+
 These notes break ByteBite into its parts and explain why each decision was made, not just what was done. Read them in order the first time. After that, each one stands on its own.
 
 Every number comes from a file in this repo:
 
-- the root `README.md`
+- [historical research overview](overview.md), preserved from the original root README
 - `paper/ByteBite_Paper.pdf`
 - `notebooks/bytebite_v4_walkthrough.md`
 - `notebooks/bytebite_android_export.ipynb`

@@ -1,5 +1,7 @@
 # ByteBite Android app
 
+> Current research prototype. For planned persistent storage, food rejection, and glucose integration, see the [implementation plan](../docs/planning/README.md). Those features are not yet implemented.
+
 A native Kotlin / Jetpack Compose app that runs the ByteBite nutrition model on the phone. One app with three experiences, picked from a chooser screen:
 
 - **Fusion**: scan, glucose, log, and manual entry with a profile. The combined experience.
@@ -25,7 +27,7 @@ From the command line:
 
 ## The model
 
-The shutter takes a real photo and the five estimates (calories, mass, carbohydrate, protein, fat) come from the EfficientNetB3 model running locally through LiteRT. Nothing leaves the device: the app has no `INTERNET` permission.
+With exported model assets installed, the shutter takes a real photo and the five estimates (calories, mass, carbohydrate, protein, fat) come from EfficientNetB3 running locally through LiteRT. The app has no `INTERNET` permission; OS-managed backups and explicit exports require separate controls. See the [storage policy proposal](../docs/planning/data-storage.md).
 
 The model file is not committed. Generate it with [`notebooks/bytebite_android_export.ipynb`](../notebooks/bytebite_android_export.ipynb), which writes the `.tflite`, its preprocessing contract and a parity fixture into `app/src/main/assets/`. See [`README_MODEL.md`](README_MODEL.md) for the conversion routes considered and the preprocessing details that have to match, and [`app/src/main/assets/README.md`](app/src/main/assets/README.md) for the generated files.
 
