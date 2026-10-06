@@ -28,7 +28,7 @@ The tempting alternative, a square centre-crop, cuts off the sides of the plate 
 
 ## Privacy by construction
 
-The app's manifest has no `INTERNET` permission. That's stronger than a privacy policy: Android itself stops the app from sending anything anywhere. For a tool whose input is photos of meals and whose output is health data, that's the right default.
+The app's manifest has no `INTERNET` permission, and inference requires no server. This does not rule out operating-system backups or explicit sharing through other apps. The current manifest enables backup with largely default rules. See the [storage plan](../planning/data-storage.md) for the proposed policy and remaining decisions.
 
 ## Honest UI
 
@@ -40,6 +40,8 @@ Two features in the original mockups described outputs this model doesn't have:
 Both now appear only in the sample-data state. A live estimate shows the model's measured test error instead, because that's information it actually has. The rule: the UI should never claim more than the model can back up.
 
 ## Known gaps and next steps
+
+The table below preserves research-era directions. Current priorities, including the professor's reported glucose model, are tracked in the [roadmap](../planning/roadmap.md). Suggested fixes here require validation; they are not established guarantees.
 
 | Gap | Why it matters | What would fix it |
 |---|---|---|
