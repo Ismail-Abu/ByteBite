@@ -129,6 +129,19 @@ class AddEditMealViewModelTest {
         assertEquals(2, repo.getMeal(id)!!.revisions.size)
     }
 
+    @Test fun `edited flag is false until a field changes and survives recreation`() = runTest(dispatcher) {
+        val state = SavedStateHandle()
+        val vm = vmNew(state)
+        advanceUntilIdle()
+        assertFalse(vm.ui.value.edited)
+        vm.onField(MealInput.Field.CARBS, "10")
+        assertTrue(vm.ui.value.edited)
+        // process recreation keeps the unsaved-changes flag
+        val restored = vmNew(state)
+        advanceUntilIdle()
+        assertTrue(restored.ui.value.edited)
+    }
+
     @Test fun `invalid input blocks save and shows name and form errors separately`() = runTest(dispatcher) {
         val vm = vmNew()
         advanceUntilIdle()

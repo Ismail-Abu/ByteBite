@@ -1,5 +1,7 @@
 package com.example.guione.meal.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +14,10 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -21,10 +26,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.guione.meal.AppGraph
 import com.example.guione.meal.ThemeMode
 import com.example.guione.ui.theme.Spacing
+import kotlinx.coroutines.flow.collectLatest
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +57,10 @@ fun SettingsScreen(onBack: () -> Unit) {
     val vm = rememberSettingsViewModel()
     val storage by vm.storage.collectAsStateWithLifecycle()
     val deleting by vm.deleting.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
     var confirmDelete by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { vm.messages.collectLatest { snackbar.showSnackbar(it) } }
 
     Scaffold(
         topBar = {
@@ -61,6 +73,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(
             Modifier
@@ -91,36 +104,59 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
 
-            SettingsSection("Storage & data") {
+            SettingsSection("Storage") {
                 val usage = storage
+                val sizeText = when {
+                    usage == null -> "Measuring…"
+                    usage.dbBytes < 0 -> "Unavailable"
+                    else -> formatBytes(usage.dbBytes)
+                }
+                val countText = usage?.takeIf { it.mealCount >= 0 }?.let {
+                    " · ${it.mealCount} ${if (it.mealCount == 1) "meal" else "meals"}"
+                }.orEmpty()
+                Text("Database size: $sizeText$countText", style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    if (usage == null) "Measuring…"
-                    else "${formatBytes(usage.dbBytes)} · ${usage.mealCount} ${if (usage.mealCount == 1) "meal" else "meals"}",
-                    style = MaterialTheme.typography.bodyLarge,
+                    "This is the meal database only, not the app's total installed size.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "Meal history is stored only on this device. There is no account, cloud sync, or network access, so uninstalling the app or losing the device loses the history.",
+                    "Your meals stay on this device — no account, cloud sync, or network. Uninstalling or losing the device loses the history.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = Spacing.xs),
                 )
+            }
+
+            SettingsSection("Capabilities") {
+                CapabilityRow("Photo nutrition estimates", "Not available")
+                CapabilityRow("Food photo check", "Not available")
+                CapabilityRow("Glucose forecast", "Not available")
+                ExpandableRow("Technical details") {
+                    TechLine("Nutrition model: the trained weights and preprocessing contract are not bundled in this build; manual entry is used until they are.")
+                    TechLine("Food gate: a validated on-device food/non-food classifier and its held-out evaluation are required before photo estimation is enabled.")
+                    TechLine("Glucose: awaiting the external glucose model and its input/units/horizon contract. No values are simulated.")
+                }
+            }
+
+            // Destructive actions, kept apart from ordinary settings.
+            SettingsSection("Danger zone") {
                 Text(
-                    "No meal photos are stored yet; image capture and thumbnail retention arrive with on-device estimation.",
+                    "Permanently delete every meal and its history from this device. This cannot be undone.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = Spacing.xs),
                 )
                 Spacer(Modifier.height(Spacing.md))
                 OutlinedButton(
                     onClick = { confirmDelete = true },
                     enabled = !deleting && (storage?.mealCount ?: 0) > 0,
-                ) { Text("Delete all data", color = MaterialTheme.colorScheme.error) }
-            }
-
-            SettingsSection("Model status") {
-                CapabilityRow("Nutrition estimation", "Not installed", "Photo-based estimates are off until the trained model is added to the app.")
-                CapabilityRow("Food check", "Unavailable", "A validated food/non-food gate is required before photo estimation is enabled.")
-                CapabilityRow("Glucose forecast", "Unavailable", "Awaiting the glucose model and its input contract. No values are simulated.")
+                ) {
+                    if (deleting) {
+                        CircularProgressIndicator(Modifier.height(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Delete all data", color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
 
             SettingsSection("About") {
@@ -153,11 +189,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 @Composable
 private fun SettingsSection(title: String, content: @Composable () -> Unit) {
     Spacer(Modifier.height(Spacing.lg))
-    Text(
-        title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-    )
+    Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     Spacer(Modifier.height(Spacing.xs))
     content()
     Spacer(Modifier.height(Spacing.sm))
@@ -165,14 +197,42 @@ private fun SettingsSection(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun CapabilityRow(name: String, status: String, explanation: String) {
-    Column(Modifier.padding(vertical = Spacing.xs)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Text(status, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Text(explanation, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun CapabilityRow(name: String, status: String) {
+    Row(
+        Modifier.fillMaxWidth().height(40.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(status, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+@Composable
+private fun ExpandableRow(title: String, content: @Composable () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth().height(48.dp).clickable { expanded = !expanded },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+        Icon(
+            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = if (expanded) "Collapse" else "Expand",
+        )
+    }
+    AnimatedVisibility(visible = expanded) {
+        Column { content() }
+    }
+}
+
+@Composable
+private fun TechLine(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = Spacing.xs),
+    )
 }
 
 private fun formatBytes(bytes: Long): String = when {

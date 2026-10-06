@@ -15,7 +15,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -67,6 +69,12 @@ fun AddEditMealScreen(
     val vm = rememberAddEditViewModel()
     val state by vm.ui.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    var confirmDiscard by remember { mutableStateOf(false) }
+
+    fun handleBack() {
+        if (state.edited) confirmDiscard = true else onBack()
+    }
+    BackHandler(enabled = state.edited) { confirmDiscard = true }
 
     LaunchedEffect(Unit) {
         vm.savedEvents.collectLatest { onSaved() }
@@ -80,7 +88,7 @@ fun AddEditMealScreen(
             TopAppBar(
                 title = { Text(if (state.editing) "Edit meal" else "Add meal") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { handleBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -164,6 +172,20 @@ fun AddEditMealScreen(
             }
             Spacer(Modifier.height(Spacing.xl))
         }
+    }
+
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text("Discard changes?") },
+            text = { Text("Your edits to this meal haven't been saved. Leave without saving?") },
+            confirmButton = {
+                TextButton(onClick = { confirmDiscard = false; onBack() }) {
+                    Text("Discard", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Keep editing") } },
+        )
     }
 }
 

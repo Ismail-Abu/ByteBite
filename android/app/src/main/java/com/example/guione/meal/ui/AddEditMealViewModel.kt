@@ -57,6 +57,8 @@ class AddEditMealViewModel(
         val saveError: String? = null,
         val loadError: String? = null,
         val initialized: Boolean = false,
+        /** True once the user has changed any field — drives the discard confirm. */
+        val edited: Boolean = false,
     )
 
     private val _ui = MutableStateFlow(UiState())
@@ -129,6 +131,7 @@ class AddEditMealViewModel(
             occurredAt = Instant.ofEpochMilli(state.get<Long>(KEY_OCCURRED_MS) ?: clock.millis()),
             offset = ZoneOffset.ofTotalSeconds(state.get<Int>(KEY_OFFSET_SECONDS) ?: 0),
             initialized = true,
+            edited = state.get<Boolean>(KEY_EDITED) ?: false,
         )
     }
 
@@ -142,6 +145,7 @@ class AddEditMealViewModel(
         state[KEY_FAT] = s.fat
         state[KEY_OCCURRED_MS] = s.occurredAt.toEpochMilli()
         state[KEY_OFFSET_SECONDS] = s.offset.totalSeconds
+        state[KEY_EDITED] = s.edited
     }
 
     fun onName(value: String) = edit { it.copy(name = value, nameError = null, formError = null) }
@@ -161,7 +165,7 @@ class AddEditMealViewModel(
     fun onOccurredAt(instant: Instant) = edit { it.copy(occurredAt = instant, formError = null) }
 
     private inline fun edit(block: (UiState) -> UiState) {
-        _ui.update { block(it).copy(saveError = null) }
+        _ui.update { block(it).copy(saveError = null, edited = true) }
         persist(_ui.value)
     }
 
@@ -222,6 +226,7 @@ class AddEditMealViewModel(
         private const val KEY_OFFSET_SECONDS = "ae.off"
         private const val KEY_DRAFT_MEAL_ID = "ae.draftMeal"
         private const val KEY_DRAFT_REVISION_ID = "ae.draftRev"
+        private const val KEY_EDITED = "ae.edited"
     }
 }
 

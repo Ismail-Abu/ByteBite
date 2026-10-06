@@ -54,7 +54,7 @@ class ScreensRobolectricTest {
         AppGraph.overrideClock(clock)
         AppGraph.overrideRepository(InMemoryMealRepository(clock))
         compose.setContent { ByteBiteTheme { SettingsScreen(onBack = {}) } }
-        compose.onNodeWithText("Nutrition estimation").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Not installed").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Photo nutrition estimates").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Glucose forecast").performScrollTo().assertIsDisplayed()
     }
 }
