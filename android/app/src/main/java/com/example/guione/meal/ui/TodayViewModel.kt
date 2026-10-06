@@ -41,7 +41,7 @@ class TodayViewModel(
 
     data class UiState(
         val loading: Boolean = true,
-        val date: LocalDate = LocalDate.EPOCH,
+        val date: LocalDate = LocalDate.of(1970, 1, 1),
         val summary: Summary = Summary(0, null, null, null, null, false),
         val recent: List<MealListItem> = emptyList(),
     )

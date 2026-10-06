@@ -40,4 +40,9 @@ object AppGraph {
     fun overrideRepository(repo: MealRepository) {
         synchronized(this) { repository = repo }
     }
+
+    /** Test seam: pin the clock so day-boundary logic is deterministic. */
+    fun overrideClock(c: Clock) {
+        clock = c
+    }
 }

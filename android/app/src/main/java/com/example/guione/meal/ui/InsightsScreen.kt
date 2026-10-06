@@ -2,8 +2,8 @@ package com.example.guione.meal.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +36,7 @@ fun InsightsScreen(
         // Honest unavailable state: no glucose model or readings are integrated,
         // so there is nothing to chart. No placeholder curves or invented axes.
         EmptyState(
-            icon = Icons.Outlined.ShowChart,
+            icon = Icons.AutoMirrored.Outlined.ShowChart,
             title = "No insights available yet",
             message = "Glucose insights will appear here once a glucose model and your " +
                 "readings are available. Nothing is simulated — until then there is " +

@@ -41,6 +41,13 @@ android {
         viewBinding = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric reads merged resources/manifest for the JVM Compose tests.
+            isIncludeAndroidResources = true
+        }
+    }
+
     androidResources {
         // The .tflite must stay uncompressed in the APK: NutritionEstimator
         // memory-maps it straight out of the package, which a deflated asset
@@ -105,6 +112,13 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)
+    // JVM Compose UI tests via Robolectric (avoids the preview emulator's
+    // Espresso incompatibility; runs in the ordinary unit-test task).
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.room.testing)

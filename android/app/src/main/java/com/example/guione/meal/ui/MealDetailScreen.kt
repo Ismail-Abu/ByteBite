@@ -45,7 +45,7 @@ import com.example.guione.ui.Format
 import com.example.guione.ui.components.EmptyState
 import com.example.guione.ui.components.LoadingState
 import com.example.guione.ui.theme.Spacing
-import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +84,7 @@ fun MealDetailScreen(
         when {
             state.loading -> LoadingState(Modifier.padding(padding))
             state.notFound -> EmptyState(
-                icon = Icons.Outlined.ReceiptLong,
+                icon = Icons.AutoMirrored.Outlined.ReceiptLong,
                 title = "Meal not found",
                 message = "This meal may have been deleted.",
                 modifier = Modifier.padding(padding),

@@ -2,7 +2,7 @@ package com.example.guione.meal.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
-import androidx.compose.material.icons.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -44,7 +44,7 @@ private data class TopDest(val route: String, val label: String, val icon: Image
 private val topDestinations = listOf(
     TopDest(Routes.TODAY, "Today", Icons.Outlined.Today),
     TopDest(Routes.HISTORY, "History", Icons.AutoMirrored.Outlined.ListAlt),
-    TopDest(Routes.INSIGHTS, "Insights", Icons.Outlined.ShowChart),
+    TopDest(Routes.INSIGHTS, "Insights", Icons.AutoMirrored.Outlined.ShowChart),
 )
 
 @Composable
