@@ -92,6 +92,13 @@ layer (the foundation is now used, not just present):
   system image is installed.)
 - `lintDebug`: **PASS** (no errors). ~27 pre-existing warnings, all version /
   obsolete-SdkInt / unused-resource suggestions; none from the new code's logic.
+- **Manual on-device end-to-end** (debug APK on the emulator): launched to the
+  persisted Home (honest "No meals logged today" / "No saved meals yet"
+  states), logged a meal, saw the Today summary update and the "Saved"
+  confirmation, then **force-stopped and relaunched** — the meal was still in
+  Recent meals and the Today total persisted. Confirms manual logging +
+  durable persistence + restart recovery. (Unknown carbs correctly shown as
+  "—", not 0.)
 
 ## Remaining (next milestones, in brief order)
 
