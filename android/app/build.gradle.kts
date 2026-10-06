@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -46,6 +47,19 @@ android {
         // cannot support. Without this the interpreter fails to load at runtime.
         noCompress += "tflite"
     }
+
+    sourceSets {
+        // Room exports a JSON schema per version to app/schemas (configured
+        // below). Exposing that directory as androidTest assets lets
+        // MigrationTestHelper replay every shipped schema on-device.
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+}
+
+// Room writes a schema file per database version to app/schemas. The directory
+// is committed so migrations can be reviewed in diffs and replayed in tests.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 kotlin {
@@ -76,10 +90,18 @@ dependencies {
     implementation(libs.litert.gpu.api)
     implementation(libs.androidx.exifinterface)
 
+    // Durable meal history
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
     debugImplementation(libs.androidx.ui.tooling)
 
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

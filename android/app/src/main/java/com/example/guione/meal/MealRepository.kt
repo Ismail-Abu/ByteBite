@@ -15,9 +15,16 @@ data class MealWithRevisions(
     val current: MealRevision
         get() = revisions.first { it.id == meal.currentRevisionId }
 
-    /** The first revision ever recorded for this meal — the original estimate. */
+    /**
+     * The original estimate: the revision that references no earlier one.
+     * Identified by [MealRevision.originalEstimateRef] being null rather than by
+     * earliest timestamp, so it is stable even when a correction lands in the
+     * same millisecond as the original. Falls back to the earliest revision if a
+     * chain somehow has no un-referenced root.
+     */
     val original: MealRevision
-        get() = revisions.minByOrNull { it.createdAt }!!
+        get() = revisions.firstOrNull { it.originalEstimateRef == null }
+            ?: revisions.minWith(compareBy({ it.createdAt }, { it.id }))
 }
 
 /**
