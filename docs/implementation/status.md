@@ -8,6 +8,27 @@ milestones and before any session limit.
 - **Baseline commit (per brief):** `5411c3c` (planning). Prior in-progress work
   on this branch up to `e431ebc` (accessibility labels + model/sample tests).
 - **This session's head:** see `git log` (commits listed under "Done" below).
+- **Planning docs:** `docs/planning` was merged in from `archive/main` (it had
+  not been on this branch); implementation and planning now coexist.
+- **Git identity:** commits are authored/committed as
+  `Ismail Abu-shanab <hdsplash06@gmail.com>` (the repo's configured identity,
+  matching the GitHub account); no AI/bot attribution is added.
+
+## Update — professional UI redesign + correctness pass
+
+The three sample-data prototype experiences were replaced with one coherent
+Material 3 app (bottom nav Today / History / Insights; Settings in the app bar;
+dedicated Add/Edit and Detail screens; light + dark themes; no emojis; honest
+unavailable states). A design system lives in `ui/theme`, reusable components in
+`ui/components` and `meal/ui`. See `docs/design/android-ui.md` for references,
+tokens, the screen map, and QA screenshots.
+
+The eight review correctness issues were fixed with regression tests:
+preserved occurrence time on edit (#1), recoverable save/load/delete failures
+(#2), full draft restore via SavedStateHandle (#3), duplicate-save guard (#4),
+explicit number-parsing policy (#5), partial-total handling that still counts a
+meal with unknown values (#6), Today day-rollover on resume (#7), and an
+observed single-query + LazyColumn history (#8).
 
 ## Build environment (verified this session)
 
@@ -73,41 +94,35 @@ layer (the foundation is now used, not just present):
    this persisted surface; the three sample-data experiences remain reachable
    behind a "Design prototype" link until they are consolidated.
 
-## Checks run (this session)
+## Checks run (latest)
 
-- `testDebugUnitTest`: **PASS** — 66 tests (baseline 22 + 44 new). New:
-  `MealInputTest` (23), `MealRepositoryTest` (9), `db/MealMappersTest` (3),
-  `MealLogViewModelTest` (9).
+- `testDebugUnitTest`: **PASS** — **72 tests, 0 skipped**. Domain/repo/mappers,
+  `MealInputTest` (25, incl. the number-parsing policy), the view-model
+  regression tests (AddEdit 6, Today 3, History 1), and **Compose UI tests on
+  the JVM via Robolectric** (Today 2, Add 1, Screens 3).
 - `assembleDebug`: **PASS** — `app/build/outputs/apk/debug/app-debug.apk`
   (~66 MB; size dominated by the LiteRT native libraries).
-- `connectedDebugAndroidTest` on `Medium_Phone` (**API 37 preview**): **PASS**,
-  0 failures. `RoomMealRepositoryInstrumentedTest` (7, incl. the FK cascade and
-  idempotent save on real SQLite) and `MealMigrationTest` (1) genuinely
-  verified; `ModelFixtureTest` (3) skipped (no model assets).
-  `MealLogScreenTest` (6 Compose UI tests) **skipped** on this device: Espresso
-  3.6.1 reflects on `InputManager.getInstance()`, removed in the API 37 preview
-  image. They run on a stable API <= 35 emulator; their screen logic is covered
-  device-independently by `MealLogViewModelTest`. (This machine has no
-  cmdline-tools/sdkmanager to provision a stable image, and only the android-37
-  system image is installed.)
-- `lintDebug`: **PASS** (no errors). ~27 pre-existing warnings, all version /
-  obsolete-SdkInt / unused-resource suggestions; none from the new code's logic.
-- **Manual on-device end-to-end** (debug APK on the emulator): launched to the
-  persisted Home (honest "No meals logged today" / "No saved meals yet"
-  states), logged a meal, saw the Today summary update and the "Saved"
-  confirmation, then **force-stopped and relaunched** — the meal was still in
-  Recent meals and the Today total persisted. Confirms manual logging +
-  durable persistence + restart recovery. (Unknown carbs correctly shown as
-  "—", not 0.)
+- `connectedDebugAndroidTest` on `Medium_Phone`: **PASS**, 11, 0 failures —
+  `RoomMealRepositoryInstrumentedTest` (7) + `MealMigrationTest` (1);
+  `ModelFixtureTest` (3) skipped (no model assets).
+- `lintDebug`: **PASS** (no errors). ~33 warnings (version / unused-import
+  suggestions); the two `LocalDate.EPOCH` NewApi errors were fixed.
+- **Compose UI tests now run, not skipped.** The previous Espresso-on-API-37
+  incompatibility was resolved by moving Compose UI tests to Robolectric (JVM),
+  which uses its own input and runs in the ordinary unit-test task.
+- **Manual on-device walkthrough** (emulator, screenshots in
+  `docs/design/screenshots`): Today (empty / partial), Add meal (form,
+  validation), History, Settings, and **light + dark** themes; plus the earlier
+  log → force-stop → relaunch persistence check.
 
 ## Remaining (next milestones, in brief order)
 
-3. **Finish the UI consolidation.** Done: persisted Home + manual entry +
-   history + edit + delete + today summary, started on launch. Remaining: a
-   dedicated meal-detail screen (provenance, original-vs-corrected, optional
-   image, linked forecast), a Settings screen (storage usage, thumbnail
-   retention, delete-all, units, model availability/version), and folding the
-   capture/glucose experiences onto the persisted store so the sample-data
+3. **UI consolidation — DONE** this pass (Today / History / Detail / Add-Edit /
+   Insights / Settings, bottom nav, light+dark, prototype removed). Remaining in
+   this area: optional meal photo and a linked-forecast panel (depend on capture
+   / glucose below).
+   Earlier wording (now historical): folding the capture/glucose experiences
+   onto the persisted store so the sample-data
    prototype and its chooser can be retired from the production flow.
 4. **Capture pipeline as an explicit state machine** (quality → food-gate →
    inference → validation → review → save) with request tracking; move the
