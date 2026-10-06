@@ -6,9 +6,11 @@ The v4 EfficientNetB3 regressor is a 44 MB Keras model trained on an L4. This
 document covers how it gets onto an Android device, which conversion routes were
 considered, and why the shipped one was chosen.
 
-Inference is **entirely local**. The app declares no `INTERNET` permission.
-OS-managed backups and explicit exports need separate controls; see the
-[data and storage plan](../docs/planning/data-storage.md).
+Inference is **entirely local**. The app declares no `INTERNET` permission, and
+the meal-history database is excluded from OS cloud backup and device transfer
+(`res/xml/data_extraction_rules.xml` and `backup_rules.xml`), so health data
+stays on the device. Explicit user-initiated export/import is a documented
+future addition; see the [data and storage plan](../docs/planning/data-storage.md).
 
 ---
 

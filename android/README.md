@@ -27,7 +27,7 @@ From the command line:
 
 ## The model
 
-With exported model assets installed, the shutter takes a real photo and the five estimates (calories, mass, carbohydrate, protein, fat) come from EfficientNetB3 running locally through LiteRT. The app has no `INTERNET` permission; OS-managed backups and explicit exports require separate controls. See the [storage policy proposal](../docs/planning/data-storage.md).
+With exported model assets installed, the shutter takes a real photo and the five estimates (calories, mass, carbohydrate, protein, fat) come from EfficientNetB3 running locally through LiteRT. The app has no `INTERNET` permission, and the meal-history database is excluded from OS cloud backup and device transfer, so health data stays on the device. See the [storage policy proposal](../docs/planning/data-storage.md).
 
 The model file is not committed. Generate it with [`notebooks/bytebite_android_export.ipynb`](../notebooks/bytebite_android_export.ipynb), which writes the `.tflite`, its preprocessing contract and a parity fixture into `app/src/main/assets/`. See [`README_MODEL.md`](README_MODEL.md) for the conversion routes considered and the preprocessing details that have to match, and [`app/src/main/assets/README.md`](app/src/main/assets/README.md) for the generated files.
 

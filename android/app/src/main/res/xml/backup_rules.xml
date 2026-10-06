@@ -1,13 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pre-Android-12 auto-backup rules (fullBackupContent). Health data is kept
+  local: the meal-history database and any app-owned meal images are excluded
+  from OS cloud backup, so a dietary log never leaves the device this way. Only
+  the non-health settings (e.g. the theme choice) remain eligible for backup.
+  Android 12+ uses data_extraction_rules.xml instead.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <exclude domain="database" path="bytebite-meals.db"/>
+    <exclude domain="database" path="bytebite-meals.db-wal"/>
+    <exclude domain="database" path="bytebite-meals.db-shm"/>
+    <exclude domain="file" path="meal_images/"/>
 </full-backup-content>

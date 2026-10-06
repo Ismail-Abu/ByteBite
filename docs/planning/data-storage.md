@@ -57,7 +57,7 @@ Use paged history queries and date indexes. Compute summaries from stored record
 
 ## Privacy, backup, and recovery
 
-The existing Android manifest enables backup and its rules are largely defaults. No INTERNET permission does not prevent OS-managed backup. Decide explicitly whether cloud backup and device transfer are allowed; configure both platforms consistently.
+No INTERNET permission does not prevent OS-managed backup. On Android this is now configured explicitly: the meal-history database and app-owned meal images are excluded from both cloud backup and device-to-device transfer (`android/app/src/main/res/xml/data_extraction_rules.xml` and `backup_rules.xml`), while non-health settings (the theme choice) remain eligible. Health data therefore stays on the device; the tradeoff is that OS transfer does not carry history to a new device. iOS must be configured consistently when implemented.
 
 Strict local-only storage means loss/uninstall can lose history. Decide on optional user-initiated encrypted export/import and document that tradeoff. Automatic cloud synchronization is not part of this plan. Research uploads or telemetry require a separate, explicit design and consent.
 
