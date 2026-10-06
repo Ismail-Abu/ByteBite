@@ -47,6 +47,22 @@ fun MealRevision.toEntity(): MealRevisionEntity = MealRevisionEntity(
     createdAtEpochMs = createdAt.toEpochMilli(),
 )
 
+fun MealListRow.toListItem(): com.example.guione.meal.MealListItem =
+    com.example.guione.meal.MealListItem(
+        id = id,
+        name = name,
+        occurredAt = Instant.ofEpochMilli(occurredAtEpochMs),
+        occurrenceOffset = ZoneOffset.ofTotalSeconds(occurrenceOffsetSeconds),
+        nutrition = Nutrition(
+            caloriesKcal = caloriesKcal,
+            massGrams = massGrams,
+            carbsGrams = carbsGrams,
+            proteinGrams = proteinGrams,
+            fatGrams = fatGrams,
+        ),
+        source = NutritionSource.valueOf(source),
+    )
+
 fun MealRevisionEntity.toDomain(): MealRevision = MealRevision(
     id = id,
     mealId = mealId,

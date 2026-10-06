@@ -1,5 +1,8 @@
 package com.example.guione.meal
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Clock
@@ -23,6 +26,24 @@ class InMemoryMealRepository(
     private val meals = LinkedHashMap<String, Meal>()
     private val revisions = LinkedHashMap<String, MutableList<MealRevision>>()
     private val lock = Mutex()
+
+    // Bumped under lock after every mutation so the observe* flows re-emit a
+    // fresh snapshot, mirroring Room's table-change invalidation.
+    private val revision = MutableStateFlow(0)
+    private fun bump() { revision.value++ }
+
+    override fun observeMeals(): Flow<List<MealListItem>> = revision.map { snapshotList() }
+
+    override fun observeMeal(id: String): Flow<MealWithRevisions?> = revision.map { snapshotMeal(id) }
+
+    private fun snapshotList(): List<MealListItem> =
+        meals.values.sortedByDescending { it.occurredAt }.map { meal ->
+            val current = revisions.getValue(meal.id).first { it.id == meal.currentRevisionId }
+            MealListItem(meal.id, meal.name, meal.occurredAt, meal.occurrenceOffset, current.nutrition, current.source)
+        }
+
+    private fun snapshotMeal(id: String): MealWithRevisions? =
+        meals[id]?.let { MealWithRevisions(it, revisions.getValue(id).toList()) }
 
     override suspend fun saveManualMeal(
         valid: MealInput.Valid,
@@ -53,6 +74,7 @@ class InMemoryMealRepository(
         )
         meals[mealId] = meal
         revisions[mealId] = mutableListOf(revision)
+        bump()
         meal
     }
 
@@ -78,6 +100,7 @@ class InMemoryMealRepository(
             currentRevisionId = revision.id,
         )
         meals[mealId] = updated
+        bump()
         updated
     }
 
@@ -93,10 +116,12 @@ class InMemoryMealRepository(
     override suspend fun deleteMeal(id: String): Unit = lock.withLock {
         meals.remove(id)
         revisions.remove(id)
+        bump()
     }
 
     override suspend fun deleteAll(): Unit = lock.withLock {
         meals.clear()
         revisions.clear()
+        bump()
     }
 }

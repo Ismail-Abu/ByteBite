@@ -10,6 +10,24 @@ import androidx.room.PrimaryKey
  * zone offset in seconds, the primitive form of the domain's instant-and-offset
  * pair; millisecond resolution is ample for a logged meal.
  */
+/**
+ * Projection for the history/today list: a meal joined to its current revision's
+ * nutrition in one query, so the list never runs a per-row lookup. Not an
+ * `@Entity` — it is only ever read.
+ */
+data class MealListRow(
+    val id: String,
+    val name: String,
+    val occurredAtEpochMs: Long,
+    val occurrenceOffsetSeconds: Int,
+    val caloriesKcal: Double?,
+    val massGrams: Double?,
+    val carbsGrams: Double?,
+    val proteinGrams: Double?,
+    val fatGrams: Double?,
+    val source: String,
+)
+
 @Entity(tableName = "meals")
 data class MealEntity(
     @PrimaryKey val id: String,

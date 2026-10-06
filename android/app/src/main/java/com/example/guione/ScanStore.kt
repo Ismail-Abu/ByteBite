@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
 
 /**
  * Holds the result of the most recent scan and owns the one [NutritionEstimator]
@@ -139,92 +138,11 @@ object ScanStore {
         }
     }
 
-    private val loggedScans = mutableSetOf<String>()
-
-    /**
-     * Records that the scan behind [view] went into [log], returning false if it
-     * already did. Stops a double tap on "Log meal", or re-entering the result
-     * screen, from adding the same plate twice. Keyed per log because each
-     * experience keeps its own list.
-     */
-    fun claimForLog(view: DishView, log: String): Boolean =
-        !view.live || loggedScans.add("$log:${view.scanId}")
-
     /** True while a photo is being run; logging then would record the previous plate. */
     val busy: Boolean get() = state is State.Running
-
-    /** Current wall-clock time as the log screens print it. */
-    fun nowLabel(): String = java.time.LocalTime.now()
-        .format(java.time.format.DateTimeFormatter.ofPattern("H:mm"))
 
     /** Drops back to the camera stage without discarding the last good estimate. */
     fun reset() {
         state = if (estimator == null && triedLoad) State.NoModel else State.Idle
-    }
-}
-
-/**
- * What the result screens should draw: the real estimate when there is one,
- * otherwise the prototype's hardcoded dish.
- *
- * Keeping the fallback means a fresh clone with no exported model still
- * demonstrates the full flow, and the poster demo never shows an empty screen.
- */
-data class DishView(
-    val name: String,
-    val kcal: Int,
-    val massG: Int,
-    val carbG: Double,
-    val proteinG: Double,
-    val fatG: Double,
-    val live: Boolean,
-    val detail: String,
-    /** Non-null only for a live estimate: the model's measured test error. */
-    val errorNote: String?,
-    /** Identity of the scan behind a live view; 0 for the sample dish. */
-    val scanId: Long,
-) {
-    companion object {
-        /**
-         * One decimal place, floored at zero. The regression head is unconstrained
-         * and dips slightly below zero on lean plates (fat on plain vegetables);
-         * a negative gram count is never a real reading, so it shows as 0.
-         */
-        private fun Float.g1(): Double =
-            (coerceAtLeast(0f) * 10f).toDouble().let { Math.round(it) / 10.0 }
-
-        fun current(): DishView {
-            val e = ScanStore.lastEstimate
-            return if (e != null) {
-                DishView(
-                    name = "Scanned dish",
-                    // Round rather than truncate: the grams below round via g1(), so
-                    // truncating kcal/mass here made 541.8 kcal read as 541 while
-                    // 45.6 g carbs rounded up — inconsistent for the same estimate.
-                    kcal = e.calories.roundToInt().coerceAtLeast(0),
-                    massG = e.massG.roundToInt().coerceAtLeast(0),
-                    carbG = e.carbG.g1(),
-                    proteinG = e.proteinG.g1(),
-                    fatG = e.fatG.g1(),
-                    live = true,
-                    detail = "on-device · ${e.variant} · ${e.latencyMs} ms",
-                    errorNote = ScanStore.maeNote,
-                    scanId = e.scanId,
-                )
-            } else {
-                DishView(
-                    name = SampleData.DISH_NAME,
-                    kcal = SampleData.DISH_KCAL,
-                    massG = SampleData.DISH_MASS,
-                    carbG = SampleData.DISH_CARBS,
-                    proteinG = SampleData.DISH_PROTEIN,
-                    fatG = SampleData.DISH_FAT,
-                    live = false,
-                    detail = "sample data · no model installed",
-                    errorNote = null,
-                    scanId = 0L,
-                )
-            }
-        }
     }
 }

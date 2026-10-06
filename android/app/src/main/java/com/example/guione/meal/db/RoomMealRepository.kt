@@ -3,11 +3,15 @@ package com.example.guione.meal.db
 import androidx.room.withTransaction
 import com.example.guione.meal.Meal
 import com.example.guione.meal.MealInput
+import com.example.guione.meal.MealListItem
 import com.example.guione.meal.MealRevision
 import com.example.guione.meal.MealRepository
 import com.example.guione.meal.MealWithRevisions
 import com.example.guione.meal.NutritionSource
 import com.example.guione.meal.newId
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import java.time.Clock
 import java.time.Instant
 
@@ -28,6 +32,14 @@ class RoomMealRepository(
 ) : MealRepository {
 
     private val dao = db.mealDao()
+
+    override fun observeMeals(): Flow<List<MealListItem>> =
+        dao.observeMealList().map { rows -> rows.map { it.toListItem() } }
+
+    override fun observeMeal(id: String): Flow<MealWithRevisions?> =
+        combine(dao.observeMeal(id), dao.observeRevisions(id)) { meal, revisions ->
+            meal?.let { MealWithRevisions(it.toDomain(), revisions.map { r -> r.toDomain() }) }
+        }
 
     override suspend fun saveManualMeal(
         valid: MealInput.Valid,

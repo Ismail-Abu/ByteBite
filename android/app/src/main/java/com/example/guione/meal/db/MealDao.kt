@@ -3,9 +3,32 @@ package com.example.guione.meal.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MealDao {
+
+    /**
+     * The whole list as a single join — meal plus its current revision's
+     * nutrition — observed as a Flow so the UI updates when the table changes and
+     * never issues a per-row query. Newest occurrence first.
+     */
+    @Query(
+        """
+        SELECT m.id, m.name, m.occurredAtEpochMs, m.occurrenceOffsetSeconds,
+               r.caloriesKcal, r.massGrams, r.carbsGrams, r.proteinGrams, r.fatGrams, r.source
+        FROM meals m
+        JOIN meal_revisions r ON r.id = m.currentRevisionId
+        ORDER BY m.occurredAtEpochMs DESC, m.id ASC
+        """
+    )
+    fun observeMealList(): Flow<List<MealListRow>>
+
+    @Query("SELECT * FROM meals WHERE id = :id")
+    fun observeMeal(id: String): Flow<MealEntity?>
+
+    @Query("SELECT * FROM meal_revisions WHERE mealId = :mealId ORDER BY createdAtEpochMs ASC, id ASC")
+    fun observeRevisions(mealId: String): Flow<List<MealRevisionEntity>>
 
     // @Upsert (insert-or-UPDATE), deliberately not @Insert(REPLACE): INSERT OR
     // REPLACE on the meals row would DELETE the existing row before re-inserting

@@ -41,7 +41,26 @@ data class MealWithRevisions(
  * retried or double-tapped save with the same id updates in place instead of
  * creating a second record.
  */
+/**
+ * A meal and its current revision's nutrition, for list rendering. Produced by a
+ * single joined query so a list never does per-row lookups.
+ */
+data class MealListItem(
+    val id: String,
+    val name: String,
+    val occurredAt: java.time.Instant,
+    val occurrenceOffset: java.time.ZoneOffset,
+    val nutrition: Nutrition,
+    val source: NutritionSource,
+)
+
 interface MealRepository {
+
+    /** Observes the whole meal list (meal + current nutrition), newest first. */
+    fun observeMeals(): kotlinx.coroutines.flow.Flow<List<MealListItem>>
+
+    /** Observes one meal and its revision chain; emits null when it is deleted. */
+    fun observeMeal(id: String): kotlinx.coroutines.flow.Flow<MealWithRevisions?>
 
     /**
      * Persists a manual meal with a single [NutritionSource.MANUAL] revision.
