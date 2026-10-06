@@ -88,9 +88,12 @@ on the emulator.
 | Today (dark) | ![Today dark](screenshots/today-dark.png) |
 | Today (empty) | ![Today empty](screenshots/today-empty.png) |
 | Today (200% font) | ![Today 200% font](screenshots/today-font-200.png) |
+| Today (narrow 320 dp) | ![Today narrow](screenshots/today-narrow-320dp.png) |
+| Today (landscape) | ![Today landscape](screenshots/today-landscape.png) |
 | Add meal | ![Add meal](screenshots/add-meal.png) |
 | Add meal — validation | ![Add validation](screenshots/add-validation.png) |
 | History | ![History](screenshots/history.png) |
+| Meal details | ![Meal detail](screenshots/meal-detail.png) |
 | Settings | ![Settings](screenshots/settings.png) |
 
 ## Contrast (measured)

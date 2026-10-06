@@ -54,9 +54,22 @@ observed single-query + LazyColumn history (#8).
   their per-image source/license is not yet recorded and must be confirmed
   before reliance/publication.
 
-Verified on the emulator: Today (empty / populated / partial), Settings, and
-light + dark themes, plus a 200% font-scale pass. Not yet exercised this pass:
-a 320 dp narrow device, landscape, and TalkBack (reported as unverified).
+Verified on the emulator across every production screen: Today (empty /
+populated / partial / **narrow 320 dp** / **landscape** / **200% font** /
+dark), History (empty / data / date filter), Add/Edit (form / validation),
+Meal details, Settings (light / dark), Insights (honest unavailable). Contrast
+ratios measured for the key pairs — all >= AA (see docs/design/android-ui.md).
+
+Also this pass: **History date filter** (pick a day, clearable chip, honest
+no-meals-on-day state, disabled when empty) with timezone-aware grouping;
+a **blank glucose boundary** (`GlucosePredictor` with Unavailable/MissingInput/
+Failed, only `UnavailableGlucosePredictor` today) wired through AppGraph and read
+by Insights — ready to swap a real model behind later. Unit tests now 80, 0
+skipped.
+
+Still not run with the tool: **TalkBack** (semantics are implemented — merged
+meal-row nodes with spoken summaries, labelled action icons, >=48 dp targets,
+decorative icons marked null — but a screen-reader pass was not performed).
 
 ## Build environment (verified this session)
 
