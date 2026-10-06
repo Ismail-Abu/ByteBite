@@ -93,6 +93,30 @@ on the emulator.
 | History | ![History](screenshots/history.png) |
 | Settings | ![Settings](screenshots/settings.png) |
 
+## Contrast (measured)
+
+WCAG contrast ratios for the key foreground/background pairs, computed from the
+actual token values. All meet AA (>= 4.5:1 for normal text); most are AAA.
+
+| Pair | Light | Dark |
+|---|---:|---:|
+| Body text on surface | 16.3 | 14.3 |
+| Secondary text on surface | 8.9 | 10.9 |
+| Teal accent on surface | 6.1 | 10.8 |
+| Button label on primary | 6.4 | 7.7 |
+| Nav selected label on indicator | 13.3 | 7.3 |
+| Error on surface | 6.2 | 10.9 |
+
+## Glucose boundary
+
+Glucose forecasting is a typed but **blank reference** for now:
+`com.example.guione.meal.glucose.GlucosePredictor` with explicit
+`Unavailable` / `MissingInput` / `Failed` outcomes and only an
+`UnavailableGlucosePredictor` implementation, wired through `AppGraph`. Insights
+reads it and shows an honest unavailable state; nothing is simulated. When the
+model and its input contract arrive, a real implementation and a `Forecast` case
+drop in behind the same interface.
+
 ## Color roles and system bars
 
 Every Material role is defined for both themes from the teal/slate palette, so

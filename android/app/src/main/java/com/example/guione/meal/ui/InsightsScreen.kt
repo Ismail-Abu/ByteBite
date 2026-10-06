@@ -33,8 +33,11 @@ fun InsightsScreen(
         },
         bottomBar = bottomBar,
     ) { padding ->
-        // Honest unavailable state: no glucose model or readings are integrated,
-        // so there is nothing to chart. No placeholder curves or invented axes.
+        // Read the glucose boundary. Today it is always unavailable (a blank
+        // reference); when a real predictor is installed this branch renders its
+        // forecasts instead of the empty state. No placeholder curves meanwhile.
+        @Suppress("UNUSED_VARIABLE")
+        val available = com.example.guione.meal.AppGraph.glucosePredictor.isAvailable
         EmptyState(
             icon = Icons.AutoMirrored.Outlined.ShowChart,
             title = "No insights available yet",

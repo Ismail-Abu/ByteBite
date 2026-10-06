@@ -3,6 +3,8 @@ package com.example.guione.meal
 import android.content.Context
 import com.example.guione.meal.db.MealDatabase
 import com.example.guione.meal.db.RoomMealRepository
+import com.example.guione.meal.glucose.GlucosePredictor
+import com.example.guione.meal.glucose.UnavailableGlucosePredictor
 import java.time.Clock
 
 /**
@@ -21,6 +23,15 @@ object AppGraph {
     /** Process clock for day boundaries, freshness, and timestamps; overridable in tests. */
     @Volatile
     var clock: Clock = Clock.systemDefaultZone()
+        private set
+
+    /**
+     * Glucose forecasting boundary. A blank reference today
+     * ([UnavailableGlucosePredictor]); swap in a real implementation here once
+     * the professor's model and its contract are available.
+     */
+    @Volatile
+    var glucosePredictor: GlucosePredictor = UnavailableGlucosePredictor
         private set
 
     fun mealRepository(context: Context): MealRepository =
