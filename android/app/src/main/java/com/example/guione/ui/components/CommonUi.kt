@@ -126,11 +126,23 @@ fun NutrientStat(
 ) {
     Column(modifier) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = com.example.guione.ui.theme.StatNumberStyle, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                value,
+                style = com.example.guione.ui.theme.StatNumberStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false,
+            )
             Spacer(Modifier.width(Spacing.xs))
-            Text(unit, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                unit,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
     }
 }
 

@@ -1,9 +1,8 @@
 package com.example.guione.meal.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +41,7 @@ import com.example.guione.ui.theme.Spacing
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(
     onAddMeal: () -> Unit,
@@ -123,7 +122,6 @@ fun TodayScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TodaySummary(summary: TodayViewModel.Summary) {
     if (summary.mealCount == 0) {
@@ -139,16 +137,33 @@ private fun TodaySummary(summary: TodayViewModel.Summary) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(Spacing.sm))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xl),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        NutrientStat("Energy", Format.kcal(summary.kcal), "kcal")
-        NutrientStat("Carbs", Format.grams(summary.carbs), "g")
-        NutrientStat("Protein", Format.grams(summary.protein), "g")
-        NutrientStat("Fat", Format.grams(summary.fat), "g")
+    // Responsive: four metrics in one row where they fit, otherwise a 2x2 grid
+    // with equal-width columns so values and units stay aligned on narrow screens.
+    val stats = listOf(
+        Triple("Energy", Format.kcal(summary.kcal), "kcal"),
+        Triple("Carbs", Format.grams(summary.carbs), "g"),
+        Triple("Protein", Format.grams(summary.protein), "g"),
+        Triple("Fat", Format.grams(summary.fat), "g"),
+    )
+    // Fold to two columns when the metrics can't comfortably fit one row — both
+    // on narrow screens and at large font scales (so units never wrap mid-word).
+    val fontScale = androidx.compose.ui.platform.LocalConfiguration.current.fontScale
+    BoxWithConstraints {
+        if (maxWidth >= 340.dp * fontScale) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                stats.forEach { (l, v, u) -> NutrientStat(l, v, u, Modifier.weight(1f)) }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                stats.chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        pair.forEach { (l, v, u) -> NutrientStat(l, v, u, Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
     }
-    Spacer(Modifier.height(Spacing.sm))
+    Spacer(Modifier.height(Spacing.md))
     val mealWord = if (summary.mealCount == 1) "meal" else "meals"
     Text(
         buildString {

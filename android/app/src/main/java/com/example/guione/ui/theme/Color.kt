@@ -2,43 +2,76 @@ package com.example.guione.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ByteBite palette: a calm research-health look — near-white neutrals, deep
-// slate text, one restrained teal accent, semantic error/warning only. Defined
-// once here; screens read them through MaterialTheme.colorScheme, never as
-// literals. Dark values are chosen separately for readable contrast, not derived
-// by inverting the light ones.
+// ByteBite palette: a calm research-health look built from one teal accent and a
+// neutral slate family. Every Material color role is defined for both themes in
+// Theme.kt so no component falls back to the default violet baseline (which
+// otherwise shows up on the navigation indicator, dialogs, and selected states).
 
-// Teal accent
-internal val Teal40 = Color(0xFF006A6B)   // light primary
-internal val Teal90 = Color(0xFFCCE8E7)   // light primary container
-internal val Teal80 = Color(0xFF4FD8DC)   // dark primary
-internal val Teal30 = Color(0xFF004F50)   // dark primary container
-internal val OnTeal90 = Color(0xFF00201F)
-internal val OnTeal30 = Color(0xFFCCE8E7)
-internal val OnTeal80 = Color(0xFF00363A)  // dark onPrimary
+// --- Light ---
+internal val md_primaryL = Color(0xFF006A6B)
+internal val md_onPrimaryL = Color(0xFFFFFFFF)
+internal val md_primaryContainerL = Color(0xFF9CF0F1)
+internal val md_onPrimaryContainerL = Color(0xFF002020)
+internal val md_secondaryL = Color(0xFF4A6363)
+internal val md_onSecondaryL = Color(0xFFFFFFFF)
+internal val md_secondaryContainerL = Color(0xFFCCE8E7)
+internal val md_onSecondaryContainerL = Color(0xFF051F1F)
+internal val md_tertiaryL = Color(0xFF4B607C)
+internal val md_onTertiaryL = Color(0xFFFFFFFF)
+internal val md_tertiaryContainerL = Color(0xFFD3E4FF)
+internal val md_onTertiaryContainerL = Color(0xFF041C34)
+internal val md_errorL = Color(0xFFBA1A1A)
+internal val md_onErrorL = Color(0xFFFFFFFF)
+internal val md_errorContainerL = Color(0xFFFFDAD6)
+internal val md_onErrorContainerL = Color(0xFF410002)
+internal val md_backgroundL = Color(0xFFF4FBFA)
+internal val md_onBackgroundL = Color(0xFF161D1D)
+internal val md_surfaceL = Color(0xFFF4FBFA)
+internal val md_onSurfaceL = Color(0xFF161D1D)
+internal val md_surfaceVariantL = Color(0xFFDAE5E3)
+internal val md_onSurfaceVariantL = Color(0xFF3F4948)
+internal val md_outlineL = Color(0xFF6F7979)
+internal val md_outlineVariantL = Color(0xFFBEC9C8)
+internal val md_inverseSurfaceL = Color(0xFF2B3231)
+internal val md_inverseOnSurfaceL = Color(0xFFECF2F1)
+internal val md_inversePrimaryL = Color(0xFF4FD9DD)
+internal val md_surfaceContainerLowestL = Color(0xFFFFFFFF)
+internal val md_surfaceContainerLowL = Color(0xFFEFF5F4)
+internal val md_surfaceContainerL = Color(0xFFE9EFEE)
+internal val md_surfaceContainerHighL = Color(0xFFE3E9E8)
+internal val md_surfaceContainerHighestL = Color(0xFFDDE4E2)
+internal val md_scrim = Color(0xFF000000)
 
-// Neutral slates
-internal val Slate10 = Color(0xFF171D1E)  // light onSurface
-internal val Slate30 = Color(0xFF3F484A)  // light onSurfaceVariant-ish text
-internal val SlateVariant = Color(0xFF5B6466) // light onSurfaceVariant
-internal val NeutralBg = Color(0xFFF8FAFA) // light background (near white)
-internal val NeutralSurface = Color(0xFFFFFFFF)
-internal val NeutralSurfaceVariant = Color(0xFFECF2F1) // subtle differentiated surface
-internal val Outline = Color(0xFF6F797A)
-internal val OutlineVariant = Color(0xFFBEC8C9)
-
-internal val DarkBg = Color(0xFF0E1415)
-internal val DarkSurface = Color(0xFF151C1D)
-internal val DarkSurfaceVariant = Color(0xFF3F484A)
-internal val DarkOnSurface = Color(0xFFDDE4E3)
-internal val DarkOnSurfaceVariant = Color(0xFFBEC8C9)
-internal val DarkOutline = Color(0xFF899392)
-internal val DarkOutlineVariant = Color(0xFF3F484A)
-
-// Semantic
-internal val ErrorLight = Color(0xFFBA1A1A)
-internal val ErrorContainerLight = Color(0xFFFFDAD6)
-internal val OnErrorContainerLight = Color(0xFF410002)
-internal val ErrorDark = Color(0xFFFFB4AB)
-internal val ErrorContainerDark = Color(0xFF93000A)
-internal val OnErrorContainerDark = Color(0xFFFFDAD6)
+// --- Dark ---
+internal val md_primaryD = Color(0xFF4FD9DD)
+internal val md_onPrimaryD = Color(0xFF00363A)
+internal val md_primaryContainerD = Color(0xFF004F52)
+internal val md_onPrimaryContainerD = Color(0xFF9CF0F1)
+internal val md_secondaryD = Color(0xFFB0CCCB)
+internal val md_onSecondaryD = Color(0xFF1B3534)
+internal val md_secondaryContainerD = Color(0xFF324B4B)
+internal val md_onSecondaryContainerD = Color(0xFFCCE8E7)
+internal val md_tertiaryD = Color(0xFFB3C8E8)
+internal val md_onTertiaryD = Color(0xFF1C314B)
+internal val md_tertiaryContainerD = Color(0xFF334863)
+internal val md_onTertiaryContainerD = Color(0xFFD3E4FF)
+internal val md_errorD = Color(0xFFFFB4AB)
+internal val md_onErrorD = Color(0xFF690005)
+internal val md_errorContainerD = Color(0xFF93000A)
+internal val md_onErrorContainerD = Color(0xFFFFDAD6)
+internal val md_backgroundD = Color(0xFF0E1514)
+internal val md_onBackgroundD = Color(0xFFDDE4E2)
+internal val md_surfaceD = Color(0xFF0E1514)
+internal val md_onSurfaceD = Color(0xFFDDE4E2)
+internal val md_surfaceVariantD = Color(0xFF3F4948)
+internal val md_onSurfaceVariantD = Color(0xFFBEC9C8)
+internal val md_outlineD = Color(0xFF899392)
+internal val md_outlineVariantD = Color(0xFF3F4948)
+internal val md_inverseSurfaceD = Color(0xFFDDE4E2)
+internal val md_inverseOnSurfaceD = Color(0xFF2B3231)
+internal val md_inversePrimaryD = Color(0xFF006A6B)
+internal val md_surfaceContainerLowestD = Color(0xFF090F0F)
+internal val md_surfaceContainerLowD = Color(0xFF161D1D)
+internal val md_surfaceContainerD = Color(0xFF1A2121)
+internal val md_surfaceContainerHighD = Color(0xFF252B2B)
+internal val md_surfaceContainerHighestD = Color(0xFF303636)
