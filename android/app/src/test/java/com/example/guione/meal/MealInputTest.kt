@@ -81,8 +81,8 @@ class MealInputTest {
         assertEquals(45.6, ok(MealInput.validate(form(carbs = "45.6"), clock)).nutrition.carbsGrams!!, 1e-9)
     }
 
-    @Test fun `single comma is a decimal separator`() {
-        assertEquals(1.5, ok(MealInput.validate(form(carbs = "1,5"), clock)).nutrition.carbsGrams!!, 1e-9)
+    @Test fun `comma is thousands grouping, not a decimal`() {
+        assertEquals(1234.0, ok(MealInput.validate(form(calories = "1,234"), clock)).nutrition.caloriesKcal!!, 1e-9)
     }
 
     @Test fun `comma grouping with a dot decimal parses`() {
@@ -91,6 +91,19 @@ class MealInputTest {
 
     @Test fun `trailing dot is tolerated`() {
         assertEquals(12.0, ok(MealInput.validate(form(carbs = "12."), clock)).nutrition.carbsGrams!!, 1e-9)
+    }
+
+    // Ambiguous / malformed separator forms must be rejected, never silently
+    // rescaled into a different magnitude (brief's number-parsing policy).
+    @Test fun `ambiguous and malformed separators are rejected not rescaled`() {
+        val bad = listOf("1,5", "1.234,5", "1,234,", "1,,2", "1.2.3", "1,23", "12,34,5", ",5", "1,2345")
+        for (raw in bad) {
+            assertTrue("'$raw' should be rejected", MealInput.parseNumber(raw, MealInput.Field.CARBS) is MealInput.NumberResult.Invalid)
+        }
+    }
+
+    @Test fun `valid grouped integer joins to the right magnitude`() {
+        assertEquals(12345.0, (MealInput.parseNumber("12,345", MealInput.Field.CALORIES) as MealInput.NumberResult.Value).number, 0.0)
     }
 
     // --- Bad numbers ---

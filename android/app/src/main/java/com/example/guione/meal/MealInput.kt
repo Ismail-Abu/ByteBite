@@ -84,30 +84,64 @@ object MealInput {
     }
 
     /**
-     * Normalizes a locale-entered number to a plain `Double`-parseable string, or
-     * null if the shape is not a number. Handles a single comma used as a decimal
-     * separator ("1,5" -> "1.5"), commas used as thousands grouping
-     * ("1,234.5" -> "1234.5"), and rejects stray signs, multiple dots, and the
-     * bare "." or "-" of a half-typed value.
+     * Normalizes an entered number to a plain `Double`-parseable string, or null
+     * if the shape is not a valid number under ByteBite's explicit policy.
+     *
+     * The policy is deliberately unambiguous rather than clever, because the one
+     * thing a nutrition field must never do is silently change a value's
+     * magnitude (turn "1,,2" into 12, or a European "1.234,5" into 1.2345):
+     *
+     *  - '.' is the ONLY decimal separator, and may appear at most once.
+     *  - ',' is ONLY a thousands-grouping separator, allowed in the integer part,
+     *    and must form valid groups: a first group of 1-3 digits and every later
+     *    group exactly 3 digits, with no empty, leading, trailing, or doubled
+     *    comma, and never after the decimal point.
+     *  - An optional single leading sign is accepted (a '-' flows through to the
+     *    negative check, which rejects it with a clearer message).
+     *
+     * Anything that does not fit — "1,5", "1.234,5", "1,234,", "1,,2", "1.2.3",
+     * letters — is rejected here and surfaces as "not a number", never coerced
+     * into a different value. The UI documents "use . for decimals".
      */
     private fun normalizeDecimal(input: String): String? {
-        val hasDot = input.contains('.')
-        val commas = input.count { it == ',' }
-        val s = when {
-            commas == 0 -> input
-            // No dot and exactly one comma: comma is the decimal separator.
-            !hasDot && commas == 1 -> input.replace(',', '.')
-            // Otherwise commas are grouping and are dropped.
-            else -> input.replace(",", "")
+        var body = input
+        var sign = ""
+        if (body.startsWith("+") || body.startsWith("-")) {
+            sign = body.take(1)
+            body = body.drop(1)
         }
-        // Permit digits, at most one dot, and an optional single leading '+'.
-        // A leading '-' is syntactically valid here but produces a negative,
-        // which parseNumber rejects with a clearer "cannot be negative".
-        if (!Regex("""[+-]?\d*\.?\d*""").matches(s)) return null
-        if (s.count { it == '.' } > 1) return null
-        // "", ".", "+", "-", "+." etc. carry no digit: not a number.
-        if (s.none { it.isDigit() }) return null
-        return s
+        if (body.isEmpty()) return null
+        // Only digits and the two separators may remain.
+        if (body.any { it != '.' && it != ',' && !it.isDigit() }) return null
+        if (body.count { it == '.' } > 1) return null
+
+        val dot = body.indexOf('.')
+        val intPart = if (dot >= 0) body.substring(0, dot) else body
+        val fracPart = if (dot >= 0) body.substring(dot + 1) else ""
+        // A comma is grouping only: never in the fraction.
+        if (fracPart.any { !it.isDigit() }) return null
+
+        val intDigits: String = if (intPart.contains(',')) {
+            val groups = intPart.split(',')
+            if (groups.size < 2) return null
+            if (groups.first().isEmpty() || groups.first().length > 3) return null
+            if (groups.drop(1).any { it.length != 3 }) return null
+            if (groups.any { g -> g.any { !it.isDigit() } }) return null
+            groups.joinToString("")
+        } else {
+            if (intPart.any { !it.isDigit() }) return null
+            intPart
+        }
+
+        if (intDigits.isEmpty() && fracPart.isEmpty()) return null // ".", "", "+"
+        return buildString {
+            append(sign)
+            append(if (intDigits.isEmpty()) "0" else intDigits)
+            if (dot >= 0) {
+                append('.')
+                append(fracPart)
+            }
+        }
     }
 
     /** A name trimmed and checked for the length/blank rules. */
