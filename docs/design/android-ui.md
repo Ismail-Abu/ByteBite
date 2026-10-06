@@ -86,7 +86,18 @@ on the emulator.
 |---|---|
 | Today (light) | ![Today light](screenshots/today-light.png) |
 | Today (dark) | ![Today dark](screenshots/today-dark.png) |
+| Today (empty) | ![Today empty](screenshots/today-empty.png) |
+| Today (200% font) | ![Today 200% font](screenshots/today-font-200.png) |
 | Add meal | ![Add meal](screenshots/add-meal.png) |
 | Add meal — validation | ![Add validation](screenshots/add-validation.png) |
 | History | ![History](screenshots/history.png) |
 | Settings | ![Settings](screenshots/settings.png) |
+
+## Color roles and system bars
+
+Every Material role is defined for both themes from the teal/slate palette, so
+no component falls back to the violet baseline (the navigation indicator,
+dialogs, and container surfaces are all teal/slate). Status- and navigation-bar
+icon contrast is set from the resolved theme, so icons stay readable in light,
+dark, and when the theme is switched in app. Verified on the emulator in light
+and dark and at 200% font scale (the summary folds to a 2x2 grid).

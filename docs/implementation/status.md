@@ -30,6 +30,34 @@ explicit number-parsing policy (#5), partial-total handling that still counts a
 meal with unknown values (#6), Today day-rollover on resume (#7), and an
 observed single-query + LazyColumn history (#8).
 
+## Update — design-system, privacy, and reliability pass
+
+- **Color system completed**: every Material role defined for light and dark
+  from the teal/slate palette, removing the unintended violet from the
+  navigation indicator, dialogs, and container surfaces. Status/navigation bar
+  icon contrast now follows the resolved theme.
+- **Today** summary is responsive (one row, else 2x2) and holds up at 200% font
+  (units no longer wrap mid-word); unknown ("—") vs known-zero ("0") vs partial
+  ("Known totals") stay distinct.
+- **Privacy/backup**: the meal database (and future meal images) are excluded
+  from OS cloud backup and device transfer; README/README_MODEL/data-storage
+  text updated to match; `BackupRulesTest` guards it.
+- **Settings**: concise capability statuses with technical detail in an
+  expandable, storage figure labelled "Database size" (not total app size),
+  destructive delete moved to a "Danger zone"; delete-all has progress, a
+  retryable failure path (data intact), success feedback, cancellation-safe
+  handling, and an injectable IO dispatcher.
+- **Add/Edit**: discard-changes confirmation on back once the form is dirty;
+  the edited flag survives process recreation.
+- **Fixtures**: `androidTest/assets/photocheck/README.md` documents the 27
+  food/non-food images as held-out software-behaviour fixtures and flags that
+  their per-image source/license is not yet recorded and must be confirmed
+  before reliance/publication.
+
+Verified on the emulator: Today (empty / populated / partial), Settings, and
+light + dark themes, plus a 200% font-scale pass. Not yet exercised this pass:
+a 320 dp narrow device, landscape, and TalkBack (reported as unverified).
+
 ## Build environment (verified this session)
 
 - JDK: Android Studio **JBR 21** at `C:\Program Files\Android\Android Studio\jbr`.
@@ -96,10 +124,14 @@ layer (the foundation is now used, not just present):
 
 ## Checks run (latest)
 
-- `testDebugUnitTest`: **PASS** — **72 tests, 0 skipped**. Domain/repo/mappers,
+- `testDebugUnitTest`: **PASS** — **77 tests, 0 skipped**. Domain/repo/mappers,
   `MealInputTest` (25, incl. the number-parsing policy), the view-model
-  regression tests (AddEdit 6, Today 3, History 1), and **Compose UI tests on
-  the JVM via Robolectric** (Today 2, Add 1, Screens 3).
+  regression tests (AddEdit, Today, History, Settings), `BackupRulesTest`, and
+  **Compose UI tests on the JVM via Robolectric** (Today, Add, Screens). Note:
+  Robolectric tests are JVM tests, not real-device tests.
+  `connectedDebugAndroidTest` (Room + migration, 11, 0 failures;
+  `ModelFixtureTest` 3 skipped without model assets) re-run green on the
+  emulator after this design pass.
 - `assembleDebug`: **PASS** — `app/build/outputs/apk/debug/app-debug.apk`
   (~66 MB; size dominated by the LiteRT native libraries).
 - `connectedDebugAndroidTest` on `Medium_Phone`: **PASS**, 11, 0 failures —
