@@ -80,15 +80,18 @@ class RoomMealRepository(
     ): Meal = db.withTransaction {
         val now = clock.instant()
         val inferred = MealRevision(revisionId, mealId, rawNutrition, NutritionSource.INFERRED, null, now)
-        dao.upsertRevision(inferred.toEntity())
-        var current = revisionId
-        if (valid.nutrition != rawNutrition) {
-            val corrected = MealRevision(correctionId, mealId, valid.nutrition, NutritionSource.CORRECTED, revisionId, now)
-            dao.upsertRevision(corrected.toEntity())
-            current = correctionId
-        }
+        val edited = valid.nutrition != rawNutrition
+        val current = if (edited) correctionId else revisionId
+        // Insert the meal row first: the revision rows have a foreign key to
+        // meals.id, so writing a revision before the meal would violate it.
+        // (meals.currentRevisionId carries no FK, so it may point ahead.)
         val meal = Meal(mealId, valid.occurredAt, valid.occurrenceOffset, valid.name, now, now, current)
         dao.upsertMeal(meal.toEntity())
+        dao.upsertRevision(inferred.toEntity())
+        if (edited) {
+            val corrected = MealRevision(correctionId, mealId, valid.nutrition, NutritionSource.CORRECTED, revisionId, now)
+            dao.upsertRevision(corrected.toEntity())
+        }
         meal
     }
 

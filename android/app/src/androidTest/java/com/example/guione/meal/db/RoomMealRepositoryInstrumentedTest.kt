@@ -109,4 +109,27 @@ class RoomMealRepositoryInstrumentedTest {
     @Test fun correctingUnknownMealReturnsNull() = runBlocking {
         assertNull(repo.correctMeal("missing", valid()))
     }
+
+    @Test fun inferredSavePersistsOnRealDatabase() = runBlocking {
+        // Regression: the revision FK references the meal row, so the meal must be
+        // written first. In-memory tests can't catch this; real SQLite enforces it.
+        val raw = Nutrition(caloriesKcal = 500.0, carbsGrams = 45.0)
+        repo.saveInferredMeal(valid(nutrition = raw), raw, "m1", "r1", "c1")
+        val got = repo.getMeal("m1")!!
+        assertEquals(1, got.revisions.size)
+        assertEquals(NutritionSource.INFERRED, got.current.source)
+        assertEquals(500.0, got.current.nutrition.caloriesKcal!!, 0.0)
+    }
+
+    @Test fun inferredSaveWithEditKeepsOriginalAndCorrection() = runBlocking {
+        val raw = Nutrition(caloriesKcal = 500.0, carbsGrams = 45.0)
+        val reviewed = Nutrition(caloriesKcal = 520.0, carbsGrams = 50.0)
+        repo.saveInferredMeal(valid(nutrition = reviewed), raw, "m1", "r1", "c1")
+        val got = repo.getMeal("m1")!!
+        assertEquals(2, got.revisions.size)
+        assertEquals(NutritionSource.INFERRED, got.original.source)
+        assertEquals(45.0, got.original.nutrition.carbsGrams!!, 0.0)
+        assertEquals(NutritionSource.CORRECTED, got.current.source)
+        assertEquals("r1", got.current.originalEstimateRef)
+    }
 }
