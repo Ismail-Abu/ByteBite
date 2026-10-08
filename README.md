@@ -69,9 +69,7 @@ The trained Keras model is converted to LiteRT (TensorFlow Lite) by [`notebooks/
 To build it, open `android/` in Android Studio, or run `./gradlew installDebug` from that folder with a device attached. [`android/README.md`](android/README.md) has the full steps and the tests.
 
 ## Future work
-
-- **Depth.** Nutrition5k ships overhead depth images that this work does not use. Depth should improve portion size estimation, which is the main source of calorie and mass error.
-- **Downstream models.** Extend the app with a model estimating blood glucose response following food intake or exercise, and one estimating HbA1c, so dietary estimates feed glycemic management directly instead of sitting as isolated numbers.
+Currently working on producing an app that is fully functional and on-model by December 2026, shipping on both Android and Apple (iOS). The goal is a polished, stable release with feature parity across platforms: reliable core functionality, a consistent user experience, and performance that holds up on both ecosystems.
 
 ## Repository layout
 
